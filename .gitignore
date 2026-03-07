@@ -6,17 +6,6 @@
 # Backend is maintained in a separate git repository
 backend/
 
-# Frontend generated files and local secrets
-dimax-operations-suite-main/node_modules/
-dimax-operations-suite-main/.next/
-dimax-operations-suite-main/dist/
-dimax-operations-suite-main/test-results/
-dimax-operations-suite-main/playwright-report/
-dimax-operations-suite-main/.env.e2e.local
-dimax-operations-suite-main/.next-*.log
-dimax-operations-suite-main/tsconfig.tsbuildinfo
-
-# Mobile generated files
-mobile/node_modules/
-mobile/.expo/
-
+# Frontend and mobile are maintained in separate repositories
+dimax-operations-suite-main/
+mobile/
