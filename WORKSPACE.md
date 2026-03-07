@@ -139,6 +139,11 @@ Release docs:
 - `POST_DEPLOY_SMOKE.md`
 - `backend/RELEASE.md`
 
+Observability docs:
+
+- `backend/OBSERVABILITY.md`
+- `backend/OBSERVABILITY_CHEATSHEET.md`
+
 Rule:
 
 - every release gets a filled template
