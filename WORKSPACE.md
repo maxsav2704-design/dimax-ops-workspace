@@ -103,6 +103,19 @@ $env:GH_TOKEN="<github_token_with_repo_admin_rights>"
 
 This applies the branch rules for both backend and frontend from one command by reusing the backend GitHub API script.
 
+## Production env validation
+
+Validate backend `.env` and frontend production env in one command:
+
+```powershell
+.\workspace.cmd check-production-env
+```
+
+Expected files:
+
+- `backend/.env`
+- `dimax-operations-suite-main/.env.production.local` or `dimax-operations-suite-main/.env.production`
+
 ## Releases
 
 - Backend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-backend/releases/tag/v1.0.0

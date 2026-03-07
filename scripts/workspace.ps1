@@ -311,6 +311,20 @@ function Setup-Governance {
     )
 }
 
+function Check-ProductionEnv {
+    $frontendEnvCandidates = @(
+        (Join-Path $AdminDir ".env.production.local"),
+        (Join-Path $AdminDir ".env.production")
+    )
+    $frontendEnvFile = Find-FirstExistingPath -Candidates $frontendEnvCandidates
+    if (-not $frontendEnvFile) {
+        throw "Missing frontend production env file. Create dimax-operations-suite-main\\.env.production.local (or .env.production) before running this check."
+    }
+
+    Run-Step -Cmd "python scripts/validate_production_env.py --env-file .env" -WorkDir $BackendDir
+    Run-Step -Cmd "npm.cmd run check:env:production -- --env-file `"$frontendEnvFile`"" -WorkDir $AdminDir
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -369,6 +383,9 @@ switch ($Command.ToLowerInvariant()) {
     "setup-governance" {
         Setup-Governance
     }
+    "check-production-env" {
+        Check-ProductionEnv
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -396,6 +413,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 test-release-gate"
         Write-Host "  .\scripts\workspace.ps1 installer-gate"
         Write-Host "  .\scripts\workspace.ps1 setup-governance"
+        Write-Host "  .\scripts\workspace.ps1 check-production-env"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }
