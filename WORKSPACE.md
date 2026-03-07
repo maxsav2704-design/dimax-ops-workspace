@@ -108,6 +108,10 @@ This applies the branch rules for both backend and frontend from one command by 
 - Backend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-backend/releases/tag/v1.0.0
 - Frontend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-frontend/releases/tag/v1.0.0
 
+Post-release record:
+
+- `CHANGELOG.md`
+
 ## Repositories
 
 - Backend: https://github.com/maxsav2704-design/dimax-ops-backend
