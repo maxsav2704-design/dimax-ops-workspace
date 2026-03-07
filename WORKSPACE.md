@@ -167,6 +167,7 @@ Post-release record:
 
 - `CHANGELOG.md`
 - `V1_0_1_READINESS.md`
+- `V1_1_BACKLOG.md`
 
 ## Repositories
 
