@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1 readiness - March 7, 2026
+
+- installer web execution-speed cycle recorded in:
+  - `V1_1_READINESS.md`
+
 ## v1.0.1 readiness - March 7, 2026
 
 - operational/testing/governance hardening summary recorded in:
