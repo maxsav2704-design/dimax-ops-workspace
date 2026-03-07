@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.0.1 readiness - March 7, 2026
+
+- operational/testing/governance hardening summary recorded in:
+  - `V1_0_1_READINESS.md`
+
 ## Post-release baseline - March 7, 2026
 
 Recorded after `v1.0.0` release publication and governance hardening.
