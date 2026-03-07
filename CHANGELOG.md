@@ -1,5 +1,10 @@
 # Changelog
 
+## admin operations visibility readiness - March 7, 2026
+
+- admin operations visibility cycle recorded in:
+  - `ADMIN_OPERATIONS_VISIBILITY_READINESS.md`
+
 ## v1.1 readiness - March 7, 2026
 
 - installer web execution-speed cycle recorded in:

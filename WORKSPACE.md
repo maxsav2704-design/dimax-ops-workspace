@@ -169,6 +169,7 @@ Post-release record:
 - `V1_0_1_READINESS.md`
 - `V1_1_BACKLOG.md`
 - `V1_1_READINESS.md`
+- `ADMIN_OPERATIONS_VISIBILITY_READINESS.md`
 
 ## Repositories
 
