@@ -111,6 +111,13 @@ $env:GH_TOKEN="<github_token_with_repo_admin_rights>"
 
 This applies the branch rules for both backend and frontend from one command by reusing the backend GitHub API script.
 
+Working rule:
+
+- protection must exist on GitHub
+- normal changes go through PR only
+- admin bypass is for emergency recovery/setup only
+- use `PR_MERGE_CHECKLIST.md` before merge
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:
@@ -137,6 +144,7 @@ Release docs:
 
 - `RELEASE_TEMPLATE.md`
 - `POST_DEPLOY_SMOKE.md`
+- `PR_MERGE_CHECKLIST.md`
 - `backend/RELEASE.md`
 
 Observability docs:
