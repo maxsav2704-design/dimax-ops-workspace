@@ -69,6 +69,14 @@ workspace.cmd test-all
 workspace.cmd down
 ```
 
+Installer bootstrap:
+
+```bat
+workspace.cmd installer-gate
+```
+
+This refreshes seeded backend users/installers and auto-generates frontend `.env.e2e.local`.
+
 ## Mobile verification
 
 Installer mobile commands:
