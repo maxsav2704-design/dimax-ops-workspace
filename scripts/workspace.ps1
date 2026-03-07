@@ -296,6 +296,21 @@ Write-Host "API health check passed"
     Run-Step -Cmd $healthCheck
 }
 
+function Setup-Governance {
+    if ([string]::IsNullOrWhiteSpace($env:GH_TOKEN) -and [string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
+        throw "Missing GH_TOKEN/GITHUB_TOKEN. Export a GitHub token with repo admin rights, then run workspace.cmd setup-governance."
+    }
+
+    $token = if (-not [string]::IsNullOrWhiteSpace($env:GH_TOKEN)) { $env:GH_TOKEN } else { $env:GITHUB_TOKEN }
+    Run-ExternalStep -Exe "powershell.exe" -Args @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "setup-governance.ps1"),
+        "-Branch", "main",
+        "-Token", $token
+    )
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -351,6 +366,9 @@ switch ($Command.ToLowerInvariant()) {
     "installer-gate" {
         Test-InstallerGate
     }
+    "setup-governance" {
+        Setup-Governance
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -377,6 +395,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 smoke-mobile"
         Write-Host "  .\scripts\workspace.ps1 test-release-gate"
         Write-Host "  .\scripts\workspace.ps1 installer-gate"
+        Write-Host "  .\scripts\workspace.ps1 setup-governance"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }

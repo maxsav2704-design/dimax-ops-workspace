@@ -86,6 +86,23 @@ Notes:
 - `smoke-mobile` verifies Expo/Metro startup only.
 - Full device/emulator smoke still depends on a bootable Android image and enough free host RAM.
 
+## Governance
+
+Branch protection should be enforced on `main` for:
+
+- backend: `Backend Tests / quality-gate`
+- frontend: `Frontend Quality Gate / quality-gate`
+- frontend: `Installer Quality Gate / quality-gate`
+
+Workspace helper:
+
+```powershell
+$env:GH_TOKEN="<github_token_with_repo_admin_rights>"
+.\workspace.cmd setup-governance
+```
+
+This applies the branch rules for both backend and frontend from one command by reusing the backend GitHub API script.
+
 ## Releases
 
 - Backend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-backend/releases/tag/v1.0.0
