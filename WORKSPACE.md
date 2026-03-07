@@ -124,6 +124,27 @@ Expected files:
 - `backend/.env`
 - `dimax-operations-suite-main/.env.production.local` or `dimax-operations-suite-main/.env.production`
 
+## Release process
+
+Core commands:
+
+```powershell
+.\workspace.cmd check-production-env
+.\workspace.cmd test-release-gate
+```
+
+Release docs:
+
+- `RELEASE_TEMPLATE.md`
+- `POST_DEPLOY_SMOKE.md`
+- `backend/RELEASE.md`
+
+Rule:
+
+- every release gets a filled template
+- every deploy gets a recorded smoke pass
+- rollback notes must be written before deploy, not after failure
+
 ## Releases
 
 - Backend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-backend/releases/tag/v1.0.0
