@@ -90,3 +90,10 @@ Notes:
 
 - Backend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-backend/releases/tag/v1.0.0
 - Frontend v1.0.0: https://github.com/maxsav2704-design/dimax-ops-frontend/releases/tag/v1.0.0
+
+## Repositories
+
+- Backend: https://github.com/maxsav2704-design/dimax-ops-backend
+- Frontend: https://github.com/maxsav2704-design/dimax-ops-frontend
+- Mobile: https://github.com/maxsav2704-design/dimax-ops-mobile
+- Workspace: https://github.com/maxsav2704-design/dimax-ops-workspace
