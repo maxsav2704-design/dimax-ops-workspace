@@ -359,6 +359,18 @@ function Check-ProductionEnv {
     Run-Step -Cmd "npm.cmd run check:env:production -- --env-file `"$frontendEnvFile`"" -WorkDir $AdminDir
 }
 
+function Assert-PrBranch {
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "assert-pr-branch.ps1")
+    )
+    if ($Arg -eq "report") {
+        $args += "-ReportOnly"
+    }
+    Run-ExternalStep -Exe "powershell.exe" -Args $args
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -420,6 +432,9 @@ switch ($Command.ToLowerInvariant()) {
     "check-production-env" {
         Check-ProductionEnv
     }
+    "assert-pr-branch" {
+        Assert-PrBranch
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -448,6 +463,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 installer-gate"
         Write-Host "  .\scripts\workspace.ps1 setup-governance"
         Write-Host "  .\scripts\workspace.ps1 check-production-env"
+        Write-Host "  .\scripts\workspace.ps1 assert-pr-branch [report]"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }

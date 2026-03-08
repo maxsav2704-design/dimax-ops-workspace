@@ -118,6 +118,15 @@ Working rule:
 - admin bypass is for emergency recovery/setup only
 - use `PR_MERGE_CHECKLIST.md` before merge
 
+Local guard:
+
+```powershell
+.\workspace.cmd assert-pr-branch
+.\workspace.cmd assert-pr-branch report
+```
+
+This fails if `workspace`, `backend`, or `frontend` are still on `main` or in detached `HEAD`.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:

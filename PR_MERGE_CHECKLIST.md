@@ -7,6 +7,7 @@ Use this before merging into `main`.
 - do not push directly to `main`
 - do not use admin bypass for normal work
 - merge only through PR after required checks are green
+- before starting work, run `.\workspace.cmd assert-pr-branch`
 
 ## Required checks
 
