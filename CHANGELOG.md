@@ -1,5 +1,10 @@
 # Changelog
 
+## reports and operations convergence readiness - March 8, 2026
+
+- reports and operations convergence cycle recorded in:
+  - `REPORTS_OPERATIONS_CONVERGENCE_READINESS.md`
+
 ## admin queue controls and batch actions readiness - March 8, 2026
 
 - admin queue controls / batch actions cycle recorded in:
