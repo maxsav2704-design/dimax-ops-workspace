@@ -144,6 +144,14 @@ Push guard:
 
 This installs a shared `pre-push` hook into `workspace`, `backend`, and `frontend` via `core.hooksPath` and blocks local pushes from or to `main`.
 
+PR links:
+
+```powershell
+.\workspace.cmd pr-links
+```
+
+This prints ready-to-open compare URLs for `workspace`, `backend`, and `frontend` feature branches against `main`.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:

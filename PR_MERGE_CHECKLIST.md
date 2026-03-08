@@ -10,6 +10,7 @@ Use this before merging into `main`.
 - before starting work, run `.\workspace.cmd assert-pr-branch`
 - if all repos are still on `main`, bootstrap a branch with `.\workspace.cmd start-feature-branch feature/<short-name>`
 - keep local push guard installed with `.\workspace.cmd install-push-guard`
+- use `.\workspace.cmd pr-links` to create the PR from the current feature branch
 
 ## Required checks
 
