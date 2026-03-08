@@ -385,6 +385,18 @@ function Start-FeatureBranch {
     Run-ExternalStep -Exe "powershell.exe" -Args $args
 }
 
+function Install-PushGuard {
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "install-push-guard.ps1")
+    )
+    if ($Arg -eq "report") {
+        $args += "-ReportOnly"
+    }
+    Run-ExternalStep -Exe "powershell.exe" -Args $args
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -452,6 +464,9 @@ switch ($Command.ToLowerInvariant()) {
     "start-feature-branch" {
         Start-FeatureBranch
     }
+    "install-push-guard" {
+        Install-PushGuard
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -482,6 +497,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 check-production-env"
         Write-Host "  .\scripts\workspace.ps1 assert-pr-branch [report]"
         Write-Host "  .\scripts\workspace.ps1 start-feature-branch <name>"
+        Write-Host "  .\scripts\workspace.ps1 install-push-guard [report]"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }

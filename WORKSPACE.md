@@ -135,6 +135,15 @@ Feature branch bootstrap:
 
 This creates or checks out the same feature branch in `workspace`, `backend`, and `frontend`, and refuses to switch if any repo is dirty.
 
+Push guard:
+
+```powershell
+.\workspace.cmd install-push-guard
+.\workspace.cmd install-push-guard report
+```
+
+This installs a shared `pre-push` hook into `workspace`, `backend`, and `frontend` via `core.hooksPath` and blocks local pushes from or to `main`.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:

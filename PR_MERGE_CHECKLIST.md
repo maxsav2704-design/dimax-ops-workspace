@@ -9,6 +9,7 @@ Use this before merging into `main`.
 - merge only through PR after required checks are green
 - before starting work, run `.\workspace.cmd assert-pr-branch`
 - if all repos are still on `main`, bootstrap a branch with `.\workspace.cmd start-feature-branch feature/<short-name>`
+- keep local push guard installed with `.\workspace.cmd install-push-guard`
 
 ## Required checks
 
