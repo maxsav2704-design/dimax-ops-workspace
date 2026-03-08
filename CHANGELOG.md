@@ -1,5 +1,10 @@
 # Changelog
 
+## integrations hardening readiness - March 8, 2026
+
+- integrations hardening cycle recorded in:
+  - `INTEGRATIONS_HARDENING_READINESS.md`
+
 ## installer issue workflow readiness - March 8, 2026
 
 - installer issue workflow cycle recorded in:
