@@ -1,5 +1,10 @@
 # Changelog
 
+## installer issue workflow readiness - March 8, 2026
+
+- installer issue workflow cycle recorded in:
+  - `INSTALLER_ISSUE_WORKFLOW_READINESS.md`
+
 ## reports and operations convergence readiness - March 8, 2026
 
 - reports and operations convergence cycle recorded in:
