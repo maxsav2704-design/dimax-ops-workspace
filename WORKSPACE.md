@@ -127,6 +127,14 @@ Local guard:
 
 This fails if `workspace`, `backend`, or `frontend` are still on `main` or in detached `HEAD`.
 
+Feature branch bootstrap:
+
+```powershell
+.\workspace.cmd start-feature-branch feature/<short-name>
+```
+
+This creates or checks out the same feature branch in `workspace`, `backend`, and `frontend`, and refuses to switch if any repo is dirty.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:

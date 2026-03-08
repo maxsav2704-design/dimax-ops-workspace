@@ -8,6 +8,7 @@ Use this before merging into `main`.
 - do not use admin bypass for normal work
 - merge only through PR after required checks are green
 - before starting work, run `.\workspace.cmd assert-pr-branch`
+- if all repos are still on `main`, bootstrap a branch with `.\workspace.cmd start-feature-branch feature/<short-name>`
 
 ## Required checks
 

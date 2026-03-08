@@ -371,6 +371,20 @@ function Assert-PrBranch {
     Run-ExternalStep -Exe "powershell.exe" -Args $args
 }
 
+function Start-FeatureBranch {
+    if ([string]::IsNullOrWhiteSpace($Arg)) {
+        throw "Missing branch name. Example: .\workspace.cmd start-feature-branch feature/ops-cleanup"
+    }
+
+    $args = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "start-feature-branch.ps1"),
+        "-Branch", $Arg
+    )
+    Run-ExternalStep -Exe "powershell.exe" -Args $args
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -435,6 +449,9 @@ switch ($Command.ToLowerInvariant()) {
     "assert-pr-branch" {
         Assert-PrBranch
     }
+    "start-feature-branch" {
+        Start-FeatureBranch
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -464,6 +481,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 setup-governance"
         Write-Host "  .\scripts\workspace.ps1 check-production-env"
         Write-Host "  .\scripts\workspace.ps1 assert-pr-branch [report]"
+        Write-Host "  .\scripts\workspace.ps1 start-feature-branch <name>"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }
