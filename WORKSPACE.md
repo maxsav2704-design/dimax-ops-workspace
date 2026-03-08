@@ -170,6 +170,7 @@ Post-release record:
 - `V1_1_BACKLOG.md`
 - `V1_1_READINESS.md`
 - `ADMIN_OPERATIONS_VISIBILITY_READINESS.md`
+- `ADMIN_QUEUE_CONTROLS_READINESS.md`
 
 ## Repositories
 

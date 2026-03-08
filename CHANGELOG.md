@@ -1,5 +1,10 @@
 # Changelog
 
+## admin queue controls and batch actions readiness - March 8, 2026
+
+- admin queue controls / batch actions cycle recorded in:
+  - `ADMIN_QUEUE_CONTROLS_READINESS.md`
+
 ## admin operations visibility readiness - March 7, 2026
 
 - admin operations visibility cycle recorded in:
