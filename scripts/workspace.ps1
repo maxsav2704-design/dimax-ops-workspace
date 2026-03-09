@@ -405,6 +405,20 @@ function Show-PrLinks {
     )
 }
 
+function Manage-WebPreview {
+    $action = if ([string]::IsNullOrWhiteSpace($Arg)) { "start" } else { $Arg.ToLowerInvariant() }
+    if ($action -notin @("start", "stop", "status")) {
+        throw "Unsupported preview-web action '$Arg'. Use start, stop, or status."
+    }
+
+    Run-ExternalStep -Exe "powershell.exe" -Args @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "web-preview.ps1"),
+        "-Action", $action
+    )
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -478,6 +492,9 @@ switch ($Command.ToLowerInvariant()) {
     "pr-links" {
         Show-PrLinks
     }
+    "preview-web" {
+        Manage-WebPreview
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -510,6 +527,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 start-feature-branch <name>"
         Write-Host "  .\scripts\workspace.ps1 install-push-guard [report]"
         Write-Host "  .\scripts\workspace.ps1 pr-links"
+        Write-Host "  .\scripts\workspace.ps1 preview-web [start|stop|status]"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }

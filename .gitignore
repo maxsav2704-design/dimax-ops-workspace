@@ -2,6 +2,7 @@
 .idea/
 .vscode/
 *.log
+.env.demo
 
 # Backend is maintained in a separate git repository
 backend/

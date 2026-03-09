@@ -152,6 +152,16 @@ PR links:
 
 This prints ready-to-open compare URLs for `workspace`, `backend`, and `frontend` feature branches against `main`.
 
+Web preview:
+
+```powershell
+.\workspace.cmd preview-web
+.\workspace.cmd preview-web status
+.\workspace.cmd preview-web stop
+```
+
+This starts API + seeded demo users and runs the web UI locally on `http://localhost:5174/login` for fast admin/installer review without relying on the dev container frontend service.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:
