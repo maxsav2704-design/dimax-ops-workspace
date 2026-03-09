@@ -47,6 +47,14 @@ Recommended demo DNS:
 - frontend: `https://demo.example.com`
 - api: `https://api.demo.example.com`
 
+Public server checklist:
+
+- `DEMO_SERVER_CHECKLIST.md`
+
+Nginx reverse proxy example:
+
+- `infra/nginx/dimax-demo.conf.example`
+
 ## 2. Validate backend/frontend env contracts
 
 Backend:
@@ -128,3 +136,4 @@ docker compose --env-file .env.demo -f docker-compose.demo.yml down -v
 - current local workspace compose is dev-oriented and runs `npm ci` + `next dev`
 - demo compose is production-oriented and avoids live-reload behavior
 - keep demo deploys separate from release/prod environments
+- for a public URL, put Nginx + TLS in front of ports `5173` and `8000`

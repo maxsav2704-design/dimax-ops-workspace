@@ -198,6 +198,7 @@ Release docs:
 - `POST_DEPLOY_SMOKE.md`
 - `PR_MERGE_CHECKLIST.md`
 - `STAGING_HANDOFF.md`
+- `DEMO_SERVER_CHECKLIST.md`
 - `backend/RELEASE.md`
 
 Observability docs:
