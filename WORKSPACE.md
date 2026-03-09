@@ -152,6 +152,14 @@ PR links:
 
 This prints ready-to-open compare URLs for `workspace`, `backend`, and `frontend` feature branches against `main`.
 
+Staging handoff:
+
+```powershell
+.\workspace.cmd staging-handoff
+```
+
+This prints the PR compare links, local preview reachability, demo deploy commands, and seeded review logins in one place.
+
 Web preview:
 
 ```powershell
@@ -189,6 +197,7 @@ Release docs:
 - `RELEASE_TEMPLATE.md`
 - `POST_DEPLOY_SMOKE.md`
 - `PR_MERGE_CHECKLIST.md`
+- `STAGING_HANDOFF.md`
 - `backend/RELEASE.md`
 
 Observability docs:

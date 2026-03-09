@@ -419,6 +419,14 @@ function Manage-WebPreview {
     )
 }
 
+function Show-StagingHandoff {
+    Run-ExternalStep -Exe "powershell.exe" -Args @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "staging-handoff.ps1")
+    )
+}
+
 switch ($Command.ToLowerInvariant()) {
     "up" {
         Run-Step -Cmd "docker compose -f `"$ComposeFile`" up -d --build"
@@ -495,6 +503,9 @@ switch ($Command.ToLowerInvariant()) {
     "preview-web" {
         Manage-WebPreview
     }
+    "staging-handoff" {
+        Show-StagingHandoff
+    }
     "test-all" {
         Test-Backend
         Test-Frontend
@@ -528,6 +539,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 install-push-guard [report]"
         Write-Host "  .\scripts\workspace.ps1 pr-links"
         Write-Host "  .\scripts\workspace.ps1 preview-web [start|stop|status]"
+        Write-Host "  .\scripts\workspace.ps1 staging-handoff"
         Write-Host "  .\scripts\workspace.ps1 test-all"
         Write-Host "  .\scripts\workspace.ps1 smoke"
     }
