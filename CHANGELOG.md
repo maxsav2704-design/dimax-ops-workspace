@@ -1,5 +1,10 @@
 # Changelog
 
+## public landing readiness - March 10, 2026
+
+- public landing cycle recorded in:
+  - `PUBLIC_LANDING_READINESS.md`
+
 ## localization readiness - March 10, 2026
 
 - multilingual frontend cycle recorded in:
