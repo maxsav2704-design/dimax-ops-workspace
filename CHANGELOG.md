@@ -1,5 +1,10 @@
 # Changelog
 
+## localization readiness - March 10, 2026
+
+- multilingual frontend cycle recorded in:
+  - `LOCALIZATION_READINESS.md`
+
 ## final production maturity readiness - March 8, 2026
 
 - final production maturity cycle recorded in:
