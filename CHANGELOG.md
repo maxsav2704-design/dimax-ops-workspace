@@ -1,5 +1,10 @@
 # Changelog
 
+## public demo flow readiness - March 10, 2026
+
+- public demo/front-door browser-flow cycle recorded in:
+  - `PUBLIC_DEMO_FLOW_READINESS.md`
+
 ## public landing readiness - March 10, 2026
 
 - public landing cycle recorded in:
