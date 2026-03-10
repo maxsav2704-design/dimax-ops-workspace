@@ -76,6 +76,13 @@ function Ensure-FrontendDeps {
     Invoke-Step -Command "npm.cmd install" -WorkDir $AdminDir
 }
 
+function Reset-NextCache {
+    $nextCacheDir = Join-Path $AdminDir ".next"
+    if (Test-Path $nextCacheDir) {
+        Remove-Item -Path $nextCacheDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Ensure-ApiAndSeed {
     Invoke-Step -Command "docker compose -f `"$ComposeFile`" up -d db minio minio_init api" -WorkDir $WorkspaceRoot
     $summaryRaw = & docker compose -f $ComposeFile exec -T api python -m app.scripts.seed_dev --emit-json
@@ -136,6 +143,7 @@ function Start-Preview {
 
     $seed = Ensure-ApiAndSeed
     Ensure-FrontendDeps
+    Reset-NextCache
 
     Remove-Item $PreviewLogFile -Force -ErrorAction SilentlyContinue
     Remove-Item $PreviewErrFile -Force -ErrorAction SilentlyContinue
