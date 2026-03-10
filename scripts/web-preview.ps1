@@ -15,7 +15,7 @@ $PreviewUrl = "http://localhost:$PreviewPort"
 $PreviewPidFile = Join-Path $AdminDir ".preview-web.pid"
 $PreviewLogFile = Join-Path $AdminDir ".preview-web.log"
 $PreviewErrFile = Join-Path $AdminDir ".preview-web.err.log"
-$PreviewCommand = "npm.cmd run dev -- -p $PreviewPort"
+$PreviewCommand = "npm.cmd run start -- -p $PreviewPort"
 
 function Invoke-Step {
     param(
@@ -83,6 +83,10 @@ function Reset-NextCache {
     }
 }
 
+function Ensure-FrontendBuild {
+    Invoke-Step -Command "npm.cmd run build" -WorkDir $AdminDir
+}
+
 function Ensure-ApiAndSeed {
     Invoke-Step -Command "docker compose -f `"$ComposeFile`" up -d db minio minio_init api" -WorkDir $WorkspaceRoot
     $summaryRaw = & docker compose -f $ComposeFile exec -T api python -m app.scripts.seed_dev --emit-json
@@ -144,6 +148,7 @@ function Start-Preview {
     $seed = Ensure-ApiAndSeed
     Ensure-FrontendDeps
     Reset-NextCache
+    Ensure-FrontendBuild
 
     Remove-Item $PreviewLogFile -Force -ErrorAction SilentlyContinue
     Remove-Item $PreviewErrFile -Force -ErrorAction SilentlyContinue
