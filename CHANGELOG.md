@@ -1,5 +1,10 @@
 # Changelog
 
+## final pr summary - March 10, 2026
+
+- final multi-repo review/merge summary recorded in:
+  - `FINAL_PR_SUMMARY.md`
+
 ## staging demo polish readiness - March 10, 2026
 
 - staging/demo polish cycle recorded in:
