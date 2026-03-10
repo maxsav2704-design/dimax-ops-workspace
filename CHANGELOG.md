@@ -1,5 +1,10 @@
 # Changelog
 
+## staging demo polish readiness - March 10, 2026
+
+- staging/demo polish cycle recorded in:
+  - `STAGING_DEMO_POLISH_READINESS.md`
+
 ## public demo flow readiness - March 10, 2026
 
 - public demo/front-door browser-flow cycle recorded in:
