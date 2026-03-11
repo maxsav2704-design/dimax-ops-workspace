@@ -261,6 +261,73 @@ function Preflight-MobileDevice {
     Run-ExternalStep -Exe $toolchain.EmulatorPath -Args @("-list-avds")
 }
 
+function Preflight-MobileNativeBuild {
+    $toolchain = Get-MobileAndroidToolchain
+    Write-Host ">> mobile native build preflight"
+    Write-Host "SDK root: $($toolchain.SdkRoot)"
+    Write-Host "adb: $($toolchain.AdbPath)"
+    Write-Host "emulator: $($toolchain.EmulatorPath)"
+    Write-Host "java: $($toolchain.JavaPath)"
+
+    $missing = @()
+    if (-not $toolchain.SdkRoot) { $missing += "Android SDK root" }
+    if (-not $toolchain.AdbPath) { $missing += "adb" }
+    if (-not $toolchain.EmulatorPath) { $missing += "emulator" }
+    if (-not $toolchain.JavaPath) { $missing += "java" }
+
+    if ($missing.Count -gt 0) {
+        throw "Mobile native build preflight failed. Missing: $($missing -join ', ')."
+    }
+
+    $javaHome = if ($env:JAVA_HOME) { $env:JAVA_HOME } else { Split-Path -Parent (Split-Path -Parent $toolchain.JavaPath) }
+    Write-Host "JAVA_HOME candidate: $javaHome"
+
+    $gradleDistRoot = Join-Path $env:USERPROFILE ".gradle\wrapper\dists\gradle-8.10.2-all"
+    $gradleReady = $false
+    if (Test-Path $gradleDistRoot) {
+        $gradleReady = @(Get-ChildItem -Path $gradleDistRoot -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object {
+            $_.Name -eq "gradle-8.10.2"
+        }).Count -gt 0
+    }
+
+    if ($gradleReady) {
+        Write-Host "Gradle cache: ready"
+    }
+    else {
+        $partialFiles = @()
+        if (Test-Path $gradleDistRoot) {
+            $partialFiles = @(Get-ChildItem -Path $gradleDistRoot -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+                $_.Extension -in @(".part", ".lck")
+            } | Select-Object -ExpandProperty Name)
+        }
+        Write-Host "Gradle cache: missing gradle-8.10.2 distribution"
+        if ($partialFiles.Count -gt 0) {
+            Write-Host "Partial cache files: $($partialFiles -join ', ')"
+        }
+        throw "Native Android build requires a cached Gradle 8.10.2 distribution or internet access to services.gradle.org."
+    }
+
+    Run-ExternalStep -Exe $toolchain.JavaPath -Args @("-version")
+    Run-ExternalStep -Exe $toolchain.AdbPath -Args @("devices")
+}
+
+function Run-MobileAndroid {
+    $toolchain = Get-MobileAndroidToolchain
+    Preflight-MobileNativeBuild
+
+    $previousJavaHome = $env:JAVA_HOME
+    $previousPath = $env:Path
+    $env:JAVA_HOME = Split-Path -Parent (Split-Path -Parent $toolchain.JavaPath)
+    $env:Path = "$env:JAVA_HOME\bin;$env:Path"
+    try {
+        Run-Step -Cmd "npm.cmd run android" -WorkDir $MobileDir
+    }
+    finally {
+        $env:JAVA_HOME = $previousJavaHome
+        $env:Path = $previousPath
+    }
+}
+
 function Smoke-Mobile {
     $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $portListener = [System.Net.Sockets.TcpListener]::Create(0)
@@ -473,6 +540,12 @@ switch ($Command.ToLowerInvariant()) {
     "preflight-mobile-device" {
         Preflight-MobileDevice
     }
+    "preflight-mobile-native-build" {
+        Preflight-MobileNativeBuild
+    }
+    "run-mobile-android" {
+        Run-MobileAndroid
+    }
     "smoke-mobile" {
         Smoke-Mobile
     }
@@ -529,6 +602,8 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 test-mobile"
         Write-Host "  .\scripts\workspace.ps1 test-mobile-gate"
         Write-Host "  .\scripts\workspace.ps1 preflight-mobile-device"
+        Write-Host "  .\scripts\workspace.ps1 preflight-mobile-native-build"
+        Write-Host "  .\scripts\workspace.ps1 run-mobile-android"
         Write-Host "  .\scripts\workspace.ps1 smoke-mobile"
         Write-Host "  .\scripts\workspace.ps1 test-release-gate"
         Write-Host "  .\scripts\workspace.ps1 installer-gate"

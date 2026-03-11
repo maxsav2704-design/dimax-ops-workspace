@@ -84,6 +84,7 @@ Installer mobile commands:
 ```powershell
 .\workspace.cmd test-mobile-gate
 .\workspace.cmd preflight-mobile-device
+.\workspace.cmd preflight-mobile-native-build
 .\workspace.cmd smoke-mobile
 ```
 
@@ -91,6 +92,7 @@ Notes:
 
 - `test-mobile-gate` runs `vitest + expo config + tsc`.
 - `preflight-mobile-device` verifies Android SDK, `adb`, `emulator`, `java`.
+- `preflight-mobile-native-build` verifies `JAVA_HOME` resolution and cached Gradle `8.10.2` before the first native Android build.
 - `smoke-mobile` verifies Expo/Metro startup only.
 - Full device/emulator smoke still depends on a bootable Android image and enough free host RAM.
 
