@@ -1,5 +1,10 @@
 # Changelog
 
+## visual qa readiness - March 11, 2026
+
+- final live route-matrix visual QA recorded in:
+  - `VISUAL_QA_READINESS.md`
+
 ## final pr summary - March 10, 2026
 
 - final multi-repo review/merge summary recorded in:
