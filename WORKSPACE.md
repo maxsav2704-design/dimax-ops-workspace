@@ -94,7 +94,11 @@ Notes:
 - `preflight-mobile-device` verifies Android SDK, `adb`, `emulator`, `java`.
 - `preflight-mobile-native-build` verifies `JAVA_HOME` resolution and cached Gradle `8.10.2` before the first native Android build.
 - `smoke-mobile` verifies Expo/Metro startup only.
-- Full device/emulator smoke still depends on a bootable Android image and enough free host RAM.
+- First physical-device baseline is now confirmed:
+  - APK install
+  - app launch
+  - installer login
+- Deeper route-by-route device visual QA remains the next mobile polish step.
 
 ## Governance
 

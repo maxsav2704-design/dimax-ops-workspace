@@ -1,5 +1,17 @@
 # Changelog
 
+## mobile live device pass - March 14, 2026
+
+- confirmed physical Android device baseline for `mobile/`:
+  - APK install
+  - app launch
+  - live installer login
+- updated:
+  - `mobile/MOBILE_VISUAL_QA_READINESS.md`
+  - `mobile/MOBILE_INSTALLER_READINESS.md`
+  - `mobile/README.md`
+  - `WORKSPACE.md`
+
 ## visual qa readiness - March 11, 2026
 
 - final live route-matrix visual QA recorded in:
