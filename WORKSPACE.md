@@ -84,6 +84,7 @@ Installer mobile commands:
 ```powershell
 .\workspace.cmd test-mobile-gate
 .\workspace.cmd preflight-mobile-device
+.\workspace.cmd preflight-mobile-native-build
 .\workspace.cmd smoke-mobile
 ```
 
@@ -91,8 +92,13 @@ Notes:
 
 - `test-mobile-gate` runs `vitest + expo config + tsc`.
 - `preflight-mobile-device` verifies Android SDK, `adb`, `emulator`, `java`.
+- `preflight-mobile-native-build` verifies `JAVA_HOME` resolution and cached Gradle `8.10.2` before the first native Android build.
 - `smoke-mobile` verifies Expo/Metro startup only.
-- Full device/emulator smoke still depends on a bootable Android image and enough free host RAM.
+- First physical-device baseline is now confirmed:
+  - APK install
+  - app launch
+  - installer login
+- Deeper route-by-route device visual QA remains the next mobile polish step.
 
 ## Governance
 
@@ -135,6 +141,41 @@ Feature branch bootstrap:
 
 This creates or checks out the same feature branch in `workspace`, `backend`, and `frontend`, and refuses to switch if any repo is dirty.
 
+Push guard:
+
+```powershell
+.\workspace.cmd install-push-guard
+.\workspace.cmd install-push-guard report
+```
+
+This installs a shared `pre-push` hook into `workspace`, `backend`, and `frontend` via `core.hooksPath` and blocks local pushes from or to `main`.
+
+PR links:
+
+```powershell
+.\workspace.cmd pr-links
+```
+
+This prints ready-to-open compare URLs for `workspace`, `backend`, and `frontend` feature branches against `main`.
+
+Staging handoff:
+
+```powershell
+.\workspace.cmd staging-handoff
+```
+
+This prints the PR compare links, local preview reachability, demo deploy commands, and seeded review logins in one place.
+
+Web preview:
+
+```powershell
+.\workspace.cmd preview-web
+.\workspace.cmd preview-web status
+.\workspace.cmd preview-web stop
+```
+
+This starts API + seeded demo users and runs the web UI locally on `http://localhost:5174/login` for fast admin/installer review without relying on the dev container frontend service.
+
 ## Production env validation
 
 Validate backend `.env` and frontend production env in one command:
@@ -162,6 +203,8 @@ Release docs:
 - `RELEASE_TEMPLATE.md`
 - `POST_DEPLOY_SMOKE.md`
 - `PR_MERGE_CHECKLIST.md`
+- `STAGING_HANDOFF.md`
+- `DEMO_SERVER_CHECKLIST.md`
 - `backend/RELEASE.md`
 
 Observability docs:
@@ -191,6 +234,13 @@ Post-release record:
 - `REPORTS_OPERATIONS_CONVERGENCE_READINESS.md`
 - `INSTALLER_ISSUE_WORKFLOW_READINESS.md`
 - `INTEGRATIONS_HARDENING_READINESS.md`
+- `FINAL_PRODUCTION_MATURITY_READINESS.md`
+- `LOCALIZATION_READINESS.md`
+- `PUBLIC_LANDING_READINESS.md`
+- `PUBLIC_DEMO_FLOW_READINESS.md`
+- `STAGING_DEMO_POLISH_READINESS.md`
+- `VISUAL_QA_READINESS.md`
+- `FINAL_PR_SUMMARY.md`
 
 ## Repositories
 

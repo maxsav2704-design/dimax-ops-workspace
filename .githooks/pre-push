@@ -1,0 +1,4 @@
+#!/bin/sh
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(dirname "$0")/../scripts/pre-push-guard.ps1" "$@"
+exit $?
