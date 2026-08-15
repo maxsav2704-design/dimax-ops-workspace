@@ -32,7 +32,7 @@ Seeded demo users:
 
 This prints:
 
-- current feature-branch compare links for `workspace`, `backend`, `frontend`
+- current feature-branch compare links for `workspace`, `backend`, `frontend`, `mobile`
 - current clean/dirty repo status
 - local preview/API reachability
 - demo deploy commands
@@ -46,6 +46,7 @@ Required repos:
 - `dimax-ops-workspace`
 - `dimax-ops-backend`
 - `dimax-ops-frontend`
+- `dimax-ops-mobile`
 
 Use the repo PR templates already committed in each repository.
 
@@ -66,13 +67,14 @@ Full details:
 
 Minimum smoke:
 
-1. `GET /health` returns `200`
+1. `GET /health` and `GET /ready` return `200`
 2. admin login works
 3. installer login works
 4. `/operations` opens
 5. `/reports` opens
 6. `/installer` opens
 7. one installer project page opens
+8. `.\scripts\workspace.ps1 business-smoke` passes against preview/staging
 
 Record results in:
 

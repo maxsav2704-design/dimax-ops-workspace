@@ -14,6 +14,10 @@ Use this before merging into `main`.
 
 ## Required checks
 
+Workspace PR:
+
+- `Workspace Quality Gate / quality-gate`
+
 Backend PR:
 
 - `Backend Tests / quality-gate`
@@ -22,6 +26,10 @@ Frontend PR:
 
 - `Frontend Quality Gate / quality-gate`
 - `Installer Quality Gate / quality-gate`
+
+Mobile PR:
+
+- `Mobile Quality Gate / quality-gate`
 
 ## Author checklist
 

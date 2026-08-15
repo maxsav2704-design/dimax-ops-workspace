@@ -5,7 +5,8 @@ $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $repos = @(
     @{ Name = "workspace"; Path = $WorkspaceRoot },
     @{ Name = "backend"; Path = (Join-Path $WorkspaceRoot "backend") },
-    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") }
+    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") },
+    @{ Name = "mobile"; Path = (Join-Path $WorkspaceRoot "mobile") }
 )
 
 function Normalize-RemoteUrl {
@@ -92,11 +93,14 @@ foreach ($summary in $summaries) {
 Write-Host ""
 $previewStatus = Get-NodeStatusCode -Url "http://localhost:5174/login"
 $apiStatus = Get-NodeStatusCode -Url "http://localhost:8000/health"
+$apiReadyStatus = Get-NodeStatusCode -Url "http://localhost:8000/ready"
 $previewLabel = if ([string]::IsNullOrWhiteSpace($previewStatus)) { "unavailable" } else { $previewStatus }
 $apiLabel = if ([string]::IsNullOrWhiteSpace($apiStatus)) { "unavailable" } else { $apiStatus }
+$apiReadyLabel = if ([string]::IsNullOrWhiteSpace($apiReadyStatus)) { "unavailable" } else { $apiReadyStatus }
 Write-Host "Local preview:"
 Write-Host "- login: http://localhost:5174/login ($previewLabel)"
 Write-Host "- api:   http://localhost:8000/health ($apiLabel)"
+Write-Host "- ready: http://localhost:8000/ready ($apiReadyLabel)"
 
 Write-Host ""
 Write-Host "Demo deploy:"

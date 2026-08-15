@@ -5,7 +5,8 @@ $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $repos = @(
     @{ Name = "workspace"; Path = $WorkspaceRoot },
     @{ Name = "backend"; Path = (Join-Path $WorkspaceRoot "backend") },
-    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") }
+    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") },
+    @{ Name = "mobile"; Path = (Join-Path $WorkspaceRoot "mobile") }
 )
 
 function Normalize-RemoteUrl {

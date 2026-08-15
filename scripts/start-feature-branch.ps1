@@ -12,7 +12,8 @@ $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $repos = @(
     @{ Name = "workspace"; Path = $WorkspaceRoot },
     @{ Name = "backend"; Path = (Join-Path $WorkspaceRoot "backend") },
-    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") }
+    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") },
+    @{ Name = "mobile"; Path = (Join-Path $WorkspaceRoot "mobile") }
 )
 
 if ($Branch -notmatch '^[A-Za-z0-9._/-]+$') {
@@ -83,5 +84,5 @@ if ($ReportOnly) {
     Write-Host "Feature branch plan generated."
 }
 else {
-    Write-Host "Feature branch '$Branch' is active in workspace/backend/frontend."
+    Write-Host "Feature branch '$Branch' is active in workspace/backend/frontend/mobile."
 }

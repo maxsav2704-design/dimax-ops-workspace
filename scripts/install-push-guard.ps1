@@ -10,7 +10,8 @@ $HooksPath = Join-Path $WorkspaceRoot ".githooks"
 $Repos = @(
     @{ Name = "workspace"; Path = $WorkspaceRoot },
     @{ Name = "backend"; Path = (Join-Path $WorkspaceRoot "backend") },
-    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") }
+    @{ Name = "frontend"; Path = (Join-Path $WorkspaceRoot "dimax-operations-suite-main") },
+    @{ Name = "mobile"; Path = (Join-Path $WorkspaceRoot "mobile") }
 )
 
 if (-not (Test-Path (Join-Path $HooksPath "pre-push"))) {
@@ -49,5 +50,5 @@ if ($ReportOnly) {
     Write-Host "Push guard report complete."
 }
 else {
-    Write-Host "Push guard installed for workspace/backend/frontend."
+    Write-Host "Push guard installed for workspace/backend/frontend/mobile."
 }

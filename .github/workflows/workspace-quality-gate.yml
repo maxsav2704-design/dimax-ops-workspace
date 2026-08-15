@@ -1,0 +1,53 @@
+name: Workspace Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workspace-quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: quality-gate
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -LiteralPath scripts -Filter *.ps1 -File | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              $errors | ForEach-Object { Write-Error "$($_.Extent.File):$($_.Extent.StartLineNumber): $($_.Message)" }
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Run release tooling self-tests
+        shell: pwsh
+        run: |
+          & .\scripts\source-readiness.ps1 -SelfTest
+          & .\scripts\dependency-audit.ps1 -SelfTest
+          & .\scripts\release-status.ps1 -SelfTest
+          & .\scripts\release-handoff.ps1 -SelfTest
+          & .\scripts\android-qa-report.ps1 -SelfTest
