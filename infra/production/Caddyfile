@@ -1,0 +1,25 @@
+{
+	email {$DIMAX_TLS_EMAIL}
+	admin off
+}
+
+(dimax_security) {
+	encode zstd gzip
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+	}
+}
+
+https://{$DIMAX_ADMIN_HOST} {
+	import dimax_security
+	reverse_proxy admin:5173
+}
+
+https://{$DIMAX_API_HOST} {
+	import dimax_security
+	reverse_proxy api:8000
+}

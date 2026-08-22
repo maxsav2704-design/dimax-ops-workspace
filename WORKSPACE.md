@@ -39,6 +39,24 @@ Endpoints:
 - Admin: `http://localhost:5173`
 - Postgres host port: `5434`
 - MinIO API/UI: `9010` / `9011`
+- Local email inbox: `http://localhost:8025`
+
+Development email is delivered to Mailpit through SMTP on the internal Compose
+network. It never relays messages to external recipients. Production continues
+to require real SMTP credentials validated by `check-production-env`.
+
+Signed journal email smoke:
+
+```powershell
+docker compose -f docker-compose.workspace.yml stop outbox-worker
+docker compose -f docker-compose.workspace.yml run --rm outbox-worker python -m app.scripts.smoke_journal_email_delivery
+docker compose -f docker-compose.workspace.yml up -d --no-build outbox-worker
+```
+
+The workspace admin uses the Next.js Turbopack development server for a
+responsive local feedback loop. Production Webpack compilation and browser
+validation remain mandatory through `workspace.cmd test-frontend-gate` and
+`workspace.cmd browser-release-smoke`.
 
 ## Conflict check commands
 
@@ -262,10 +280,13 @@ Repository hygiene check:
 ```powershell
 .\workspace.cmd hygiene-check
 .\workspace.cmd hygiene-check report
+.\workspace.cmd clean-runtime-artifacts
 ```
 
 This fails when generated build/test artifacts are present in the workspace,
 backend, admin, or mobile repositories. It is intentionally read-only.
+`clean-runtime-artifacts` removes only the known backend/admin runtime outputs
+through workspace-bounded paths and then reruns the read-only check.
 
 Change grouping report:
 

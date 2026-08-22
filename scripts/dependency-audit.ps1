@@ -15,6 +15,9 @@ $LatestJsonPath = Join-Path $ReleaseDir "dependency-audit-latest.json"
 $LatestMarkdownPath = Join-Path $ReleaseDir "dependency-audit-latest.md"
 $PipAuditVersion = "2.10.1"
 $MinimumNodeVersion = [version]"20.18.0"
+$NpmFetchTimeoutMilliseconds = 60000
+$NpmFetchRetries = 2
+$BackendAuditTimeoutSeconds = 600
 $MobileImageSizeAdvisoryUrls = @(
     "https://github.com/advisories/GHSA-5p2g-fcmc-qvqq",
     "https://github.com/advisories/GHSA-w3rx-r6r6-pgpr"
@@ -233,7 +236,14 @@ function Invoke-NpmAudit {
     Push-Location $WorkingDirectory
     try {
         Write-Host "Auditing $Area npm dependency tree..."
-        $output = & $NodePath $NpmCliPath audit --json --audit-level=high --cache $npmCachePath
+        $output = & $NodePath $NpmCliPath audit `
+            --json `
+            --audit-level=high `
+            --cache $npmCachePath `
+            "--fetch-timeout=$NpmFetchTimeoutMilliseconds" `
+            "--fetch-retries=$NpmFetchRetries" `
+            --fetch-retry-mintimeout=1000 `
+            --fetch-retry-maxtimeout=10000
         $exitCode = $LASTEXITCODE
     }
     finally {
@@ -299,9 +309,14 @@ function Invoke-BackendAudit {
         -v $backendMount `
         -w /workspace `
         python:3.12-slim `
+        timeout --signal=TERM --kill-after=15s "${BackendAuditTimeoutSeconds}s" `
         sh -lc $auditCommand
     $exitCode = $LASTEXITCODE
     $raw = ($output | Out-String).Trim()
+
+    if ($exitCode -eq 124) {
+        throw "Backend dependency audit timed out after $BackendAuditTimeoutSeconds seconds."
+    }
 
     try {
         $audit = $raw | ConvertFrom-Json

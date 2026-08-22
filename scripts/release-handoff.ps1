@@ -186,6 +186,8 @@ if ($NoWrite) {
 }
 $steps.Add((Invoke-CapturedStep -Label "source-readiness" -CommandArgs $sourceReadinessArgs)) | Out-Null
 
+$steps.Add((Invoke-CapturedStep -Label "production-infra" -CommandArgs ($scriptBaseArgs + @((Join-Path $PSScriptRoot "production-infra-contract.ps1"), "-ConfigOnly")))) | Out-Null
+
 $dependencyAuditArgs = $scriptBaseArgs + @((Join-Path $PSScriptRoot "dependency-audit.ps1"))
 if ($NoWrite) {
     $dependencyAuditArgs += "-NoWrite"

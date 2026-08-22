@@ -1,3 +1,14 @@
+map $uri $dimax_safe_access_path {
+    default $uri;
+    ~^/api/v1/public/files/[^/]+$ "/api/v1/public/files/{token}";
+    ~^/api/v1/public/journals/[^/]+/sign$ "/api/v1/public/journals/{token}/sign";
+    ~^/api/v1/public/journals/[^/]+$ "/api/v1/public/journals/{token}";
+}
+
+log_format dimax_safe_access escape=json
+    '$remote_addr "$request_method $dimax_safe_access_path $server_protocol" '
+    '$status $body_bytes_sent $request_time';
+
 server {
     listen 80;
     server_name demo.example.com;
@@ -17,6 +28,7 @@ server {
 server {
     listen 80;
     server_name api.demo.example.com;
+    access_log /var/log/nginx/dimax-api-access.log dimax_safe_access;
 
     location / {
         proxy_pass http://127.0.0.1:8000;

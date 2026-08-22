@@ -1,0 +1,66 @@
+services:
+  admin:
+    image: ${DIMAX_ADMIN_IMAGE:?DIMAX_ADMIN_IMAGE must use an immutable release image}
+    init: true
+    user: "10001:10001"
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+    restart: unless-stopped
+    expose:
+      - "5173"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  gateway:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+    environment:
+      DIMAX_API_HOST: ${DIMAX_API_HOST:?DIMAX_API_HOST is required}
+      DIMAX_ADMIN_HOST: ${DIMAX_ADMIN_HOST:?DIMAX_ADMIN_HOST is required}
+      DIMAX_TLS_EMAIL: ${DIMAX_TLS_EMAIL:?DIMAX_TLS_EMAIL is required}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ${DIMAX_CADDYFILE:?DIMAX_CADDYFILE is required}:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+volumes:
+  caddy_data:
+  caddy_config:
+

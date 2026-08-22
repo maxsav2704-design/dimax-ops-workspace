@@ -218,8 +218,12 @@ function Invoke-BackendPytestGroups {
             Cmd = "timeout 1200s pytest -q tests/integration/test_addons_api.py tests/integration/test_admin_list_contracts.py tests/integration/test_audit_coverage_api.py tests/integration/test_calendar_api.py tests/integration/test_catalogs_and_settings_api.py tests/integration/test_catalogs_bulk_import_and_audit_report_api.py tests/integration/test_cors_api.py tests/integration/test_dashboard_api.py"
         },
         @{
-            Label = "projects-installers-sync"
-            Cmd = "timeout 900s pytest -q tests/integration/test_installer_phase2_api.py tests/integration/test_installer_rates_api.py tests/integration/test_installers_api.py tests/integration/test_installers_link_user_api.py tests/integration/test_projects_admin_api.py tests/integration/test_projects_installer_api.py tests/integration/test_sync_admin_api.py tests/integration/test_sync_admin_health_api.py tests/integration/test_sync_batch_api.py tests/integration/test_sync_installer_snapshot_api.py"
+            Label = "projects-installers"
+            Cmd = "timeout 1800s pytest -q tests/integration/test_installer_phase2_api.py tests/integration/test_installer_rates_api.py tests/integration/test_installers_api.py tests/integration/test_installers_link_user_api.py tests/integration/test_projects_admin_api.py tests/integration/test_projects_installer_api.py"
+        },
+        @{
+            Label = "sync"
+            Cmd = "timeout 1800s pytest -q tests/integration/test_sync_admin_api.py tests/integration/test_sync_admin_health_api.py tests/integration/test_sync_batch_api.py tests/integration/test_sync_installer_snapshot_api.py"
         },
         @{
             Label = "earnings-reports-journal-outbox-platform"
@@ -344,13 +348,20 @@ function Test-ProductionImageContract {
         "-e", ("DATABASE_URL=" + $runtimeDatabaseUrl),
         "-e", ("JWT_SECRET=" + ("a" * 64)),
         "-e", "PUBLIC_BASE_URL=https://api.dimax.invalid",
+        "-e", "PUBLIC_APP_BASE_URL=https://ops.dimax.invalid",
         "-e", "CORS_ALLOW_ORIGINS=https://ops.dimax.invalid",
         "-e", "MINIO_ENDPOINT=s3.dimax.invalid:443",
         "-e", "MINIO_ACCESS_KEY=DIMAXRUNTIME",
         "-e", ("MINIO_SECRET_KEY=" + ("s" * 32)),
         "-e", "MINIO_BUCKET=dimax-production",
         "-e", "MINIO_SECURE=true",
-        "-e", "EMAIL_ENABLED=false",
+        "-e", "SMTP_HOST=mail.dimax.invalid",
+        "-e", "SMTP_PORT=587",
+        "-e", "SMTP_TLS=true",
+        "-e", "SMTP_USER=dimax-runtime",
+        "-e", ("SMTP_PASSWORD=" + ("m" * 24)),
+        "-e", "SMTP_FROM=journal@dimax.invalid",
+        "-e", "EMAIL_ENABLED=true",
         "-e", "WHATSAPP_ENABLED=false",
         "-e", "WHATSAPP_FALLBACK_TO_EMAIL=false",
         "-e", "TWILIO_WEBHOOK_VALIDATE=false",
@@ -447,6 +458,21 @@ function Test-Frontend {
 
 function Test-Mobile {
     Run-Step -Cmd "npm.cmd run quality-gate" -WorkDir $MobileDir
+}
+
+function Test-ProductionInfrastructure {
+    $infraArgs = @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-File", (Join-Path $PSScriptRoot "production-infra-contract.ps1")
+    )
+    if ($Arg -eq "config") {
+        $infraArgs += "-ConfigOnly"
+    }
+    elseif ($Arg -eq "container") {
+        $infraArgs += "-BuildInsideDocker"
+    }
+    Run-ExternalStep -Exe "powershell.exe" -Args $infraArgs
 }
 
 function Test-DependencySecurity {
@@ -635,6 +661,7 @@ function Preflight-MobileNativeBuild {
 function Test-MobileNativeBuild {
     $toolchain = Get-MobileAndroidToolchain
     $gradleUserHome = Get-MobileGradleUserHome
+    $gradleProjectCache = Join-Path $gradleUserHome "project-cache\mobile-android"
     Preflight-MobileNativeBuild
 
     $androidDir = Join-Path $MobileDir "android"
@@ -673,11 +700,14 @@ function Test-MobileNativeBuild {
         $env:ANDROID_SDK_ROOT = $toolchain.SdkRoot
         $env:GRADLE_USER_HOME = $gradleUserHome
         $env:Path = "$env:JAVA_HOME\bin;$env:Path"
+        New-Item -ItemType Directory -Path $gradleProjectCache -Force | Out-Null
 
         Run-ExternalStep -Exe $gradleWrapper -Args @(
             ":app:assembleDebug",
             "--no-daemon",
-            "--console=plain"
+            "--console=plain",
+            "--project-cache-dir",
+            $gradleProjectCache
         ) -WorkDir $androidDir
 
         if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
@@ -710,7 +740,17 @@ function Test-MobileNativeBuild {
         New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
         Copy-Item -LiteralPath $apkPath -Destination $artifactPath -Force
         $artifact = Get-Item -LiteralPath $artifactPath
-        $hash = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash
+        $artifactStream = [System.IO.File]::OpenRead($artifactPath)
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $hash = ([System.BitConverter]::ToString(
+                $sha256.ComputeHash($artifactStream)
+            )).Replace("-", "")
+        }
+        finally {
+            $sha256.Dispose()
+            $artifactStream.Dispose()
+        }
         $sourceHead = Invoke-ExternalCapture -Exe "git" -Args @(
             "rev-parse", "HEAD"
         ) -WorkDir $MobileDir
@@ -835,6 +875,31 @@ function Smoke-Mobile {
         "-MaxWorkers", "1",
         "-SmokeTimeoutSec", "$smokeTimeoutSec"
     )
+}
+
+function Start-MobileMetro {
+    $previousCi = $env:CI
+    $env:CI = "1"
+    try {
+        Run-ExternalStep -Exe "powershell.exe" -Args @(
+            "-NoProfile",
+            "-ExecutionPolicy", "Bypass",
+            "-File", (Join-Path $PSScriptRoot "mobile-metro.ps1"),
+            "-Action", "start",
+            "-ApiBaseUrl", "http://localhost:8000",
+            "-Port", "8081",
+            "-HostMode", "localhost",
+            "-MaxWorkers", "1"
+        )
+    }
+    finally {
+        if ($null -eq $previousCi) {
+            Remove-Item Env:CI -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:CI = $previousCi
+        }
+    }
 }
 
 function Smoke-Workspace {
@@ -1239,7 +1304,7 @@ function Invoke-GoNoGo {
         }
     }
     else {
-        Invoke-GoNoGoStep -Label "Production env validation" -Action {
+        Invoke-GoNoGoStep -Label "Production env validation" -Scope "external" -Action {
             Check-ProductionEnv
         }
         Invoke-GoNoGoStep -Label "Full release gate" -Action {
@@ -1341,6 +1406,7 @@ function Clear-AdminRuntimeArtifacts {
         (Join-Path $AdminDir ".next"),
         (Join-Path $AdminDir "test-results"),
         (Join-Path $AdminDir "playwright-report"),
+        (Join-Path $AdminDir "tsconfig.tsbuildinfo"),
         (Join-Path $AdminDir ".preview-web.log"),
         (Join-Path $AdminDir ".preview-web.err.log"),
         (Join-Path $AdminDir ".preview-web.pid")
@@ -1373,6 +1439,12 @@ function Clear-BackendRuntimeArtifacts {
         ForEach-Object {
             Remove-WorkspaceGeneratedPath -Path $_.FullName
         }
+}
+
+function Clear-WorkspaceRuntimeArtifacts {
+    Clear-BackendRuntimeArtifacts
+    Clear-AdminRuntimeArtifacts
+    Test-WorkspaceHygiene
 }
 
 function Assert-PrBranch {
@@ -1579,11 +1651,17 @@ switch ($Command.ToLowerInvariant()) {
     "smoke-mobile" {
         Smoke-Mobile
     }
+    "start-mobile-metro" {
+        Start-MobileMetro
+    }
     "test-release-gate" {
         Test-ReleaseGate
     }
     "test-production-image" {
         Test-ProductionImageContract
+    }
+    "test-production-infra" {
+        Test-ProductionInfrastructure
     }
     "dependency-audit" {
         Test-DependencySecurity
@@ -1614,6 +1692,9 @@ switch ($Command.ToLowerInvariant()) {
     }
     "hygiene-check" {
         Test-WorkspaceHygiene
+    }
+    "clean-runtime-artifacts" {
+        Clear-WorkspaceRuntimeArtifacts
     }
     "visual-brand-smoke" {
         Smoke-VisualBrand
@@ -1678,8 +1759,10 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 test-mobile-native-build"
         Write-Host "  .\scripts\workspace.ps1 run-mobile-android"
         Write-Host "  .\scripts\workspace.ps1 smoke-mobile"
+        Write-Host "  .\scripts\workspace.ps1 start-mobile-metro"
         Write-Host "  .\scripts\workspace.ps1 test-release-gate"
         Write-Host "  .\scripts\workspace.ps1 test-production-image"
+        Write-Host "  .\scripts\workspace.ps1 test-production-infra [config|container]"
         Write-Host "  .\scripts\workspace.ps1 dependency-audit"
         Write-Host "  .\scripts\workspace.ps1 source-readiness [report|dry-run|no-write|self-test]"
         Write-Host "  .\scripts\workspace.ps1 installer-gate"
@@ -1690,6 +1773,7 @@ switch ($Command.ToLowerInvariant()) {
         Write-Host "  .\scripts\workspace.ps1 docker-clean [dry-run|report]"
         Write-Host "  .\scripts\workspace.ps1 go-no-go [quick|full]"
         Write-Host "  .\scripts\workspace.ps1 hygiene-check [report|dry-run]"
+        Write-Host "  .\scripts\workspace.ps1 clean-runtime-artifacts"
         Write-Host "  .\scripts\workspace.ps1 visual-brand-smoke"
         Write-Host "  .\scripts\workspace.ps1 browser-release-smoke"
         Write-Host "  .\scripts\workspace.ps1 assert-pr-branch [report]"

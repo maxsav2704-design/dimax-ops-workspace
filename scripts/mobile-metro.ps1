@@ -94,6 +94,8 @@ function Resolve-PreferredNodePath {
 }
 
 function Get-MetroArguments {
+    param([bool]$UseClearCache = [bool]$ClearCache)
+
     $arguments = @(
         $ExpoCliRelative,
         "start",
@@ -102,7 +104,7 @@ function Get-MetroArguments {
         "--port", "$Port",
         "--max-workers", "$MaxWorkers"
     )
-    if ($ClearCache) {
+    if ($UseClearCache) {
         $arguments += "--clear"
     }
     return $arguments
@@ -110,6 +112,22 @@ function Get-MetroArguments {
 
 function Get-BundleUrl {
     return "http://127.0.0.1:$Port/.expo/.virtual-metro-entry.bundle?platform=android&dev=true&lazy=false&minify=false&app=com.dimax.operations.installer&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server"
+}
+
+function Get-MetroStartupTimeoutSec {
+    param([ValidateRange(30, 3600)][int]$RequestedTimeoutSec)
+
+    return $RequestedTimeoutSec
+}
+
+function Test-MetroCacheRecoveryCandidate {
+    param([Parameter(Mandatory = $true)][string]$Message)
+
+    return $Message -match (
+        'Metro returned an error payload instead of JavaScript|' +
+        'DependencyGraph\.js|' +
+        "Cannot read properties of undefined \(reading 'get'\)"
+    )
 }
 
 function Convert-ResponseContentToString {
@@ -199,6 +217,140 @@ function Remove-SmokeDirectory {
     }
 }
 
+function Wait-MetroStatus {
+    param(
+        [Parameter(Mandatory = $true)][System.Diagnostics.Process]$Process,
+        [ValidateRange(30, 3600)][int]$TimeoutSec
+    )
+
+    $statusDeadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $statusDeadline) {
+        if ($Process.HasExited) {
+            throw "Expo exited before Metro became ready (exit code $($Process.ExitCode))."
+        }
+        try {
+            $statusResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/status" -TimeoutSec 3
+            $statusContent = Convert-ResponseContentToString -Content $statusResponse.Content
+            if ($statusResponse.StatusCode -eq 200 -and $statusContent -match "packager-status:running") {
+                return
+            }
+        }
+        catch {
+            Start-Sleep -Seconds 1
+        }
+    }
+    throw "Metro status did not become ready within the allowed startup window."
+}
+
+function Invoke-MetroBundleProbe {
+    param(
+        [Parameter(Mandatory = $true)][string]$BundlePath,
+        [ValidateRange(30, 3600)][int]$TimeoutSec
+    )
+
+    $bundleStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    try {
+        $bundleResponse = Invoke-WebRequest `
+            -UseBasicParsing `
+            -Uri (Get-BundleUrl) `
+            -OutFile $BundlePath `
+            -PassThru `
+            -TimeoutSec $TimeoutSec
+    }
+    catch {
+        $errorDetail = [string]$_.ErrorDetails.Message
+        if (
+            $errorDetail -match '"type"\s*:\s*"InternalError"' -or
+            $errorDetail -match 'Metro has encountered an error' -or
+            $errorDetail -match 'DependencyGraph\.js'
+        ) {
+            throw "Metro returned an error payload instead of JavaScript: $errorDetail"
+        }
+        throw
+    }
+    finally {
+        $bundleStopwatch.Stop()
+    }
+
+    if ($bundleResponse.StatusCode -ne 200) {
+        throw "Metro bundle request returned HTTP $($bundleResponse.StatusCode)."
+    }
+    if (-not (Test-Path -LiteralPath $BundlePath -PathType Leaf)) {
+        throw "Metro bundle response did not create an output file."
+    }
+
+    $bundleSize = (Get-Item -LiteralPath $BundlePath).Length
+    if ($bundleSize -lt 500000) {
+        throw "Metro bundle is unexpectedly small ($bundleSize bytes)."
+    }
+    $bundlePrefix = Read-FilePrefix -Path $BundlePath
+    if ($bundlePrefix -match '"type"\s*:\s*"InternalError"|Metro has encountered an error') {
+        throw "Metro returned an error payload instead of JavaScript."
+    }
+
+    return [pscustomobject]@{
+        StatusCode = $bundleResponse.StatusCode
+        Size = $bundleSize
+        ElapsedSeconds = [math]::Round($bundleStopwatch.Elapsed.TotalSeconds, 1)
+    }
+}
+
+function Start-DeviceReadyMetro {
+    param(
+        [Parameter(Mandatory = $true)][string]$NodePath,
+        [ValidateRange(30, 3600)][int]$TimeoutSec
+    )
+
+    $useClearCache = [bool]$ClearCache
+    while ($true) {
+        $process = $null
+        $bundlePath = Join-Path ([System.IO.Path]::GetTempPath()) (
+            "dimax-device-ready-" + [guid]::NewGuid().ToString("N") + ".bundle"
+        )
+        try {
+            $process = Start-Process `
+                -FilePath $NodePath `
+                -ArgumentList (Get-MetroArguments -UseClearCache $useClearCache) `
+                -WorkingDirectory $MobileDir `
+                -NoNewWindow `
+                -PassThru
+
+            Wait-MetroStatus -Process $process -TimeoutSec $TimeoutSec
+            $probe = Invoke-MetroBundleProbe -BundlePath $bundlePath -TimeoutSec $TimeoutSec
+            Write-Host ""
+            Write-Host "Metro device bundle ready:"
+            Write-Host "- HTTP:   $($probe.StatusCode)"
+            Write-Host "- bytes:  $($probe.Size)"
+            Write-Host "- time:   $($probe.ElapsedSeconds) sec"
+            Write-Host "- cache:  $(if ($useClearCache) { 'rebuilt' } else { 'reused' })"
+            Write-Host ""
+            Write-Host "The Android app can now connect on port $Port."
+
+            Wait-Process -Id $process.Id
+            if ($process.ExitCode -ne 0) {
+                throw "Expo Metro exited with code $($process.ExitCode)."
+            }
+            return
+        }
+        catch {
+            $message = $_.Exception.Message
+            if (-not $useClearCache -and (Test-MetroCacheRecoveryCandidate -Message $message)) {
+                Write-Warning "Metro cache is invalid. Retrying once with a clean cache."
+                $useClearCache = $true
+                continue
+            }
+            throw
+        }
+        finally {
+            if ($null -ne $process -and -not $process.HasExited) {
+                Stop-MetroProcesses -RootProcessId $process.Id
+                Wait-Process -Id $process.Id -Timeout 10 -ErrorAction SilentlyContinue
+            }
+            Remove-Item -LiteralPath $bundlePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Invoke-SelfTest {
     $cases = @(
         @{ Version = [version]"20.18.0"; Expected = $true },
@@ -221,7 +373,25 @@ function Invoke-SelfTest {
         }
     }
 
-    Write-Output "Mobile Metro self-test passed (8 cases)."
+    foreach ($timeout in @(120, 900)) {
+        if ((Get-MetroStartupTimeoutSec -RequestedTimeoutSec $timeout) -ne $timeout) {
+            throw "Metro startup timeout self-test truncated $timeout seconds."
+        }
+    }
+
+    $normalArguments = @(Get-MetroArguments -UseClearCache $false)
+    $clearArguments = @(Get-MetroArguments -UseClearCache $true)
+    if ('--clear' -in $normalArguments -or '--clear' -notin $clearArguments) {
+        throw "Metro clear-cache argument self-test failed."
+    }
+    if (
+        -not (Test-MetroCacheRecoveryCandidate -Message "Metro error in DependencyGraph.js") -or
+        (Test-MetroCacheRecoveryCandidate -Message "Unable to resolve a source module")
+    ) {
+        throw "Metro cache recovery classification self-test failed."
+    }
+
+    Write-Output "Mobile Metro self-test passed (12 cases)."
 }
 
 function Invoke-Smoke {
@@ -234,11 +404,13 @@ function Invoke-Smoke {
     $bundleFile = Join-Path $smokeDir "index.android.bundle"
     $process = $null
     $previousCi = $env:CI
+    $previousExpoOffline = $env:EXPO_OFFLINE
     $previousApiBaseUrl = $env:EXPO_PUBLIC_API_BASE_URL
     $previousNodeEnv = $env:NODE_ENV
 
     New-Item -ItemType Directory -Path $smokeDir -Force | Out-Null
     $env:CI = "1"
+    $env:EXPO_OFFLINE = "1"
     $env:EXPO_PUBLIC_API_BASE_URL = $ApiBaseUrl
     $env:NODE_ENV = "development"
 
@@ -252,7 +424,9 @@ function Invoke-Smoke {
         Write-Host "- node:        $nodeExe ($nodeVersion)"
         Write-Host "- port:        $Port"
         Write-Host "- max workers: $MaxWorkers"
-        Write-Host "- timeout:     $SmokeTimeoutSec sec"
+        $startupTimeoutSec = Get-MetroStartupTimeoutSec -RequestedTimeoutSec $SmokeTimeoutSec
+        Write-Host "- startup:     $startupTimeoutSec sec"
+        Write-Host "- bundle:      $SmokeTimeoutSec sec"
 
         $process = Start-Process -FilePath $nodeExe `
             -ArgumentList (Get-MetroArguments) `
@@ -262,57 +436,13 @@ function Invoke-Smoke {
             -WindowStyle Hidden `
             -PassThru
 
-        $statusDeadline = (Get-Date).AddSeconds([math]::Min(180, $SmokeTimeoutSec))
-        $statusReady = $false
-        while ((Get-Date) -lt $statusDeadline) {
-            if ($process.HasExited) {
-                throw "Expo exited before Metro became ready (exit code $($process.ExitCode))."
-            }
-            try {
-                $statusResponse = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$Port/status" -TimeoutSec 3
-                $statusContent = Convert-ResponseContentToString -Content $statusResponse.Content
-                if ($statusResponse.StatusCode -eq 200 -and $statusContent -match "packager-status:running") {
-                    $statusReady = $true
-                    break
-                }
-            }
-            catch {
-                Start-Sleep -Seconds 1
-            }
-        }
-        if (-not $statusReady) {
-            throw "Metro status did not become ready within the allowed startup window."
-        }
-
-        $bundleStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-        $bundleResponse = Invoke-WebRequest `
-            -UseBasicParsing `
-            -Uri (Get-BundleUrl) `
-            -OutFile $bundleFile `
-            -PassThru `
-            -TimeoutSec $SmokeTimeoutSec
-        $bundleStopwatch.Stop()
-
-        if ($bundleResponse.StatusCode -ne 200) {
-            throw "Metro bundle request returned HTTP $($bundleResponse.StatusCode)."
-        }
-        if (-not (Test-Path -LiteralPath $bundleFile -PathType Leaf)) {
-            throw "Metro bundle response did not create an output file."
-        }
-
-        $bundleSize = (Get-Item -LiteralPath $bundleFile).Length
-        if ($bundleSize -lt 500000) {
-            throw "Metro bundle is unexpectedly small ($bundleSize bytes)."
-        }
-        $bundlePrefix = Read-FilePrefix -Path $bundleFile
-        if ($bundlePrefix -match '"type"\s*:\s*"InternalError"|Metro has encountered an error') {
-            throw "Metro returned an error payload instead of JavaScript."
-        }
+        Wait-MetroStatus -Process $process -TimeoutSec $startupTimeoutSec
+        $probe = Invoke-MetroBundleProbe -BundlePath $bundleFile -TimeoutSec $SmokeTimeoutSec
 
         Write-Host "Mobile bundle smoke passed:"
-        Write-Host "- HTTP:   200"
-        Write-Host "- bytes:  $bundleSize"
-        Write-Host "- time:   $([math]::Round($bundleStopwatch.Elapsed.TotalSeconds, 1)) sec"
+        Write-Host "- HTTP:   $($probe.StatusCode)"
+        Write-Host "- bytes:  $($probe.Size)"
+        Write-Host "- time:   $($probe.ElapsedSeconds) sec"
     }
     catch {
         Write-SmokeLogs -LogPath $logFile -ErrorPath $errorFile
@@ -329,6 +459,12 @@ function Invoke-Smoke {
         }
         else {
             $env:CI = $previousCi
+        }
+        if ($null -eq $previousExpoOffline) {
+            Remove-Item Env:EXPO_OFFLINE -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:EXPO_OFFLINE = $previousExpoOffline
         }
         if ($null -eq $previousApiBaseUrl) {
             Remove-Item Env:EXPO_PUBLIC_API_BASE_URL -ErrorAction SilentlyContinue
@@ -369,10 +505,6 @@ switch ($Action) {
         Write-Host "- node:        $nodeExe ($nodeVersion)"
         Write-Host "- clear cache: $([bool]$ClearCache)"
         Write-Host ""
-        Set-Location $MobileDir
-        & $nodeExe @(Get-MetroArguments)
-        if ($LASTEXITCODE -ne 0) {
-            throw "Expo Metro exited with code $LASTEXITCODE."
-        }
+        Start-DeviceReadyMetro -NodePath $nodeExe -TimeoutSec $SmokeTimeoutSec
     }
 }

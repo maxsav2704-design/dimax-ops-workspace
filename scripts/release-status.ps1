@@ -12,6 +12,7 @@ $AdminDir = Join-Path $WorkspaceRoot "dimax-operations-suite-main"
 $MobileDir = Join-Path $WorkspaceRoot "mobile"
 $ReleaseDir = Join-Path $WorkspaceRoot "artifacts\release"
 $FinalPackagePath = Join-Path $WorkspaceRoot "FINAL_GO_NO_GO_PACKAGE.md"
+$ProductionMaturityPath = Join-Path $WorkspaceRoot "FINAL_PRODUCTION_MATURITY_READINESS.md"
 
 function Find-FirstExistingPath {
     param([string[]]$Candidates)
@@ -223,6 +224,41 @@ function Get-FinalPackageContractStatus {
     return 'PASS: static index points to the generated release decision'
 }
 
+function Get-ProductionMaturityContractStatus {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return 'BLOCKED: FINAL_PRODUCTION_MATURITY_READINESS.md is missing'
+    }
+
+    $content = Get-Content -LiteralPath $Path -Raw
+    $requiredTokens = @(
+        '<!-- dimax-production-maturity-index:v1 -->',
+        'artifacts/release/release-status-latest.md',
+        'artifacts/release/source-readiness-latest.md',
+        'artifacts/release/dependency-audit-latest.md',
+        'FINAL_GO_NO_GO_PACKAGE.md',
+        'PRODUCTION_ENV_REQUIRED_VALUES.md',
+        'POST_DEPLOY_SMOKE.md'
+    )
+    $missingTokens = @($requiredTokens | Where-Object { -not $content.Contains($_) })
+    if ($missingTokens.Count -gt 0) {
+        return "BLOCKED: production maturity index is incomplete: $($missingTokens -join ', ')"
+    }
+
+    if ($content -match '(?<![A-Za-z0-9])\d{1,3}%') {
+        return 'BLOCKED: production maturity index duplicates a dynamic readiness percentage'
+    }
+    if ($content -match '(?<![A-Fa-f0-9])[A-Fa-f0-9]{40,64}(?![A-Fa-f0-9])') {
+        return 'BLOCKED: production maturity index duplicates a source or artifact digest'
+    }
+    if ($content -match '(?i)(?<![A-Za-z0-9])\d+\s+(tests?|test files|routes)(?![A-Za-z0-9])') {
+        return 'BLOCKED: production maturity index duplicates a dynamic verification count'
+    }
+
+    return 'PASS: static maturity index points to generated release evidence'
+}
+
 function Invoke-ReleaseStatusSelfTest {
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("dimax-release-status-" + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $tempDir | Out-Null
@@ -253,6 +289,42 @@ function Invoke-ReleaseStatusSelfTest {
         $missingStatus = Get-FinalPackageContractStatus -Path (Join-Path $tempDir 'missing.md')
         if ($missingStatus -notlike 'BLOCKED:*') {
             throw "Missing final package contract was accepted: $missingStatus"
+        }
+
+        $validMaturityPath = Join-Path $tempDir 'valid-maturity.md'
+        @(
+            '<!-- dimax-production-maturity-index:v1 -->',
+            'artifacts/release/release-status-latest.md',
+            'artifacts/release/source-readiness-latest.md',
+            'artifacts/release/dependency-audit-latest.md',
+            'FINAL_GO_NO_GO_PACKAGE.md',
+            'PRODUCTION_ENV_REQUIRED_VALUES.md',
+            'POST_DEPLOY_SMOKE.md'
+        ) | Set-Content -LiteralPath $validMaturityPath -Encoding UTF8
+        $validMaturityStatus = Get-ProductionMaturityContractStatus -Path $validMaturityPath
+        if ($validMaturityStatus -notlike 'PASS:*') {
+            throw "Valid production maturity contract was rejected: $validMaturityStatus"
+        }
+
+        $staleMaturitySamples = @(
+            'Production readiness: 95%',
+            ('Source: ' + ('a' * 40)),
+            'Mobile quality gate: 162 tests'
+        )
+        foreach ($sample in $staleMaturitySamples) {
+            $staleMaturityPath = Join-Path $tempDir (([guid]::NewGuid().ToString('N')) + '.md')
+            (Get-Content -LiteralPath $validMaturityPath -Raw) + "`n$sample" |
+                Set-Content -LiteralPath $staleMaturityPath -Encoding UTF8
+            $staleMaturityStatus = Get-ProductionMaturityContractStatus -Path $staleMaturityPath
+            if ($staleMaturityStatus -notlike 'BLOCKED:*') {
+                throw "Stale production maturity contract was accepted: $sample"
+            }
+        }
+
+        $missingMaturityStatus = Get-ProductionMaturityContractStatus `
+            -Path (Join-Path $tempDir 'missing-maturity.md')
+        if ($missingMaturityStatus -notlike 'BLOCKED:*') {
+            throw "Missing production maturity contract was accepted: $missingMaturityStatus"
         }
 
         $cleanSourceStatus = Get-SourceSnapshotDecision -Repositories @(
@@ -425,6 +497,24 @@ function Invoke-ReleaseStatusSelfTest {
             throw "Fresh source readiness evidence was rejected: $sourceReadinessStatus"
         }
 
+        @{
+            status = 'ok'
+            checked_at = $now.AddHours(-1).ToString('o')
+            total_changed_paths = 0
+            source_fingerprint = ('d' * 64)
+            large_files = @()
+            risky_paths = @()
+            issues = @()
+        } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $sourceReadinessPath -Encoding UTF8
+        $cleanTreeReadinessStatus = Get-SourceReadinessEvidenceStatus `
+            -JsonPath $sourceReadinessPath `
+            -SourcePaths @() `
+            -CurrentChangedPathCount 0 `
+            -Now $now
+        if ($cleanTreeReadinessStatus -notlike 'PASS:*') {
+            throw "Clean-tree source readiness evidence was rejected: $cleanTreeReadinessStatus"
+        }
+
         $invalidFingerprintEvidence = Get-Content -LiteralPath $sourceReadinessPath -Raw | ConvertFrom-Json
         $invalidFingerprintEvidence.source_fingerprint = 'not-a-sha256'
         $invalidFingerprintEvidence | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $sourceReadinessPath -Encoding UTF8
@@ -478,21 +568,7 @@ function Invoke-ReleaseStatusSelfTest {
         $visualRoot = Join-Path $tempDir 'visual'
         $visualRun = Join-Path $visualRoot 'run'
         New-Item -ItemType Directory -Path $visualRun -Force | Out-Null
-        $requiredScreenshots = @(
-            'login.png',
-            'admin-dashboard.png',
-            'admin-projects.png',
-            'admin-installers.png',
-            'admin-documents.png',
-            'admin-operations.png',
-            'admin-reports.png',
-            'admin-door-types.png',
-            'admin-reasons.png',
-            'installer-workspace.png',
-            'installer-earnings.png',
-            'installer-issues.png',
-            'installer-sync-queue.png'
-        )
+        $requiredScreenshots = @(Get-RequiredVisualBrandScreenshotNames)
         foreach ($name in $requiredScreenshots) {
             $screenPath = Join-Path $visualRun $name
             'png' | Set-Content -LiteralPath $screenPath -Encoding UTF8
@@ -506,7 +582,7 @@ function Invoke-ReleaseStatusSelfTest {
             throw "Complete visual evidence was rejected: $visualStatus"
         }
 
-        Remove-Item -LiteralPath (Join-Path $visualRun 'login.png') -Force
+        Remove-Item -LiteralPath (Join-Path $visualRun 'login-desktop.png') -Force
         $incompleteVisualStatus = Get-VisualBrandEvidenceStatus `
             -RootPath $visualRoot `
             -SourcePaths @($sourcePath) `
@@ -780,7 +856,11 @@ function Get-LatestArtifactDirectoryStatus {
 }
 
 function Get-LatestSourceWriteTime {
-    param([Parameter(Mandatory = $true)][string[]]$Paths)
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$Paths
+    )
 
     $latest = [datetime]::MinValue
     foreach ($path in $Paths) {
@@ -923,7 +1003,9 @@ function Get-DependencyAuditEvidenceStatus {
 function Get-SourceReadinessEvidenceStatus {
     param(
         [Parameter(Mandatory = $true)][string]$JsonPath,
-        [Parameter(Mandatory = $true)][string[]]$SourcePaths,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [string[]]$SourcePaths,
         [Parameter(Mandatory = $true)][int]$CurrentChangedPathCount,
         [datetimeoffset]$Now = [datetimeoffset]::Now,
         [timespan]$MaxAge = [timespan]::FromHours(24)
@@ -987,6 +1069,30 @@ function Get-SourceReadinessEvidenceStatus {
     return "PASS: changed source snapshot $($sourceFingerprint.Substring(0, 12)) passed boundary, size, path, whitespace, and secret checks at $($checkedAt.ToString('u'))"
 }
 
+function Get-RequiredVisualBrandScreenshotNames {
+    $routes = @(
+        'login',
+        'admin-dashboard',
+        'admin-projects',
+        'admin-installers',
+        'admin-documents',
+        'admin-operations',
+        'admin-reports',
+        'admin-door-types',
+        'admin-reasons',
+        'installer-workspace',
+        'installer-earnings',
+        'installer-issues',
+        'installer-sync-queue'
+    )
+
+    foreach ($route in $routes) {
+        foreach ($viewport in @('desktop', 'mobile')) {
+            Write-Output "$route-$viewport.png"
+        }
+    }
+}
+
 function Get-VisualBrandEvidenceStatus {
     param(
         [Parameter(Mandatory = $true)][string]$RootPath,
@@ -1006,21 +1112,7 @@ function Get-VisualBrandEvidenceStatus {
         return 'BLOCKED: visual brand evidence is missing'
     }
 
-    $requiredFiles = @(
-        'login.png',
-        'admin-dashboard.png',
-        'admin-projects.png',
-        'admin-installers.png',
-        'admin-documents.png',
-        'admin-operations.png',
-        'admin-reports.png',
-        'admin-door-types.png',
-        'admin-reasons.png',
-        'installer-workspace.png',
-        'installer-earnings.png',
-        'installer-issues.png',
-        'installer-sync-queue.png'
-    )
+    $requiredFiles = @(Get-RequiredVisualBrandScreenshotNames)
     $missingFiles = @($requiredFiles | Where-Object {
         $candidate = Join-Path $latest.FullName $_
         -not (Test-Path -LiteralPath $candidate -PathType Leaf) -or
@@ -1051,7 +1143,7 @@ function Get-VisualBrandEvidenceStatus {
         return 'BLOCKED: visual brand evidence predates admin UI or browser-test changes'
     }
 
-    return "PASS: 13 required screenshots captured at $($latestEvidenceWrite.ToString('u'))"
+    return "PASS: $($requiredFiles.Count) required screenshots captured at $($latestEvidenceWrite.ToString('u'))"
 }
 
 function Get-HygieneStatus {
@@ -1086,6 +1178,7 @@ catch {
     "BLOCKED: source readiness state could not be evaluated: $($_.Exception.Message)"
 }
 $finalPackageStatus = Get-FinalPackageContractStatus -Path $FinalPackagePath
+$productionMaturityStatus = Get-ProductionMaturityContractStatus -Path $ProductionMaturityPath
 $productionEnvStatus = Get-ProductionEnvStatus
 $androidReleaseConfigStatus = Get-AndroidReleaseConfigStatus
 $androidSigningEnvStatus = Get-AndroidSigningEnvStatus
@@ -1134,6 +1227,7 @@ $codeBlocked = $healthStatus -like "FAIL:*" -or
     $hygieneStatus -like "FAIL:*" -or
     $sourceReadinessStatus -like "BLOCKED:*" -or
     $finalPackageStatus -like "BLOCKED:*" -or
+    $productionMaturityStatus -like "BLOCKED:*" -or
     $androidReleaseConfigStatus -like "BLOCKED:*" -or
     $dependencyAuditStatus -like "BLOCKED:*" -or
     $businessSmokeStatus -like "BLOCKED:*" -or
@@ -1180,6 +1274,7 @@ $lines.Add(('- Hygiene: `{0}`' -f $hygieneStatus)) | Out-Null
 $lines.Add(('- Source safety: `{0}`' -f $sourceReadinessStatus)) | Out-Null
 $lines.Add(('- Release source: `{0}`' -f $releaseSourceStatus)) | Out-Null
 $lines.Add(('- Final package contract: `{0}`' -f $finalPackageStatus)) | Out-Null
+$lines.Add(('- Production maturity contract: `{0}`' -f $productionMaturityStatus)) | Out-Null
 $lines.Add(('- Dependency security: `{0}`' -f $dependencyAuditStatus)) | Out-Null
 $lines.Add(('- Production env: `{0}`' -f $productionEnvStatus)) | Out-Null
 $lines.Add(('- Android release config: `{0}`' -f $androidReleaseConfigStatus)) | Out-Null
@@ -1206,6 +1301,9 @@ if ($releaseSourceBlocked) {
 }
 if ($finalPackageStatus -like "BLOCKED:*") {
     $lines.Add('- Restore the static final package index and point it to `artifacts/release/release-status-latest.md`.') | Out-Null
+}
+if ($productionMaturityStatus -like "BLOCKED:*") {
+    $lines.Add('- Restore the static production maturity index and remove duplicated percentages, digests, and verification counts.') | Out-Null
 }
 if ($androidReleaseConfigStatus -like "BLOCKED:*") {
     $lines.Add('- Fix the stable Android application ID, signing, and production API guards.') | Out-Null

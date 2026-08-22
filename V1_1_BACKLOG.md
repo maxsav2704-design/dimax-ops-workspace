@@ -1,5 +1,9 @@
 # v1.1 Product Backlog
 
+> Historical backlog from the web-first stage. The optional mobile return-path
+> section is superseded by the implemented offline-first mobile candidate; use
+> `FINAL_PRODUCTION_MATURITY_READINESS.md` for current release blockers.
+
 Status date: March 7, 2026
 
 This backlog starts after `v1.0.1` hardening is complete.

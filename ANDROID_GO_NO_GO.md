@@ -4,18 +4,18 @@
 - Product: `DIMAX Operations Suite`
 - Audit tracker: `C:\Users\Hi-tech\.vscode\DIMAX Operations Suite\AUDIT_RELEASE_WORKING_v3.2.md`
 - Final release package: `C:\Users\Hi-tech\.vscode\DIMAX Operations Suite\FINAL_GO_NO_GO_PACKAGE.md`
-- Decision date: `2026-06-16`
-- Reviewed by: `Product owner acceptance + Codex device smoke`
+- Decision date: `2026-08-22`
+- Reviewed by: `Automated release gates; current physical-device regression pending`
 
 ## Current readiness
 - Backend: `READY`
 - Frontend: `READY`
 - Code-side implementation: `READY`
-- Device route smoke: `PASS on 2210129SG / Android 15`
+- Device route smoke: `STALE: last PASS belongs to the 2026-08-15 APK`
 - Project Waze handoff: `PASS on 2210129SG / Android 15`
 - Project WhatsApp handoff: `PASS by product-owner acceptance; device proof reaches normal WhatsApp chooser`
-- Production mobile decision: `GO`
-- Remaining gate: `None for mobile Android release gate`
+- Production mobile decision: `NO-GO`
+- Remaining gate: `Run the current APK on a physical device and bind the evidence to its SHA-256`
 
 ## Critical Android checks
 
@@ -59,30 +59,45 @@
 - Screenshot folder: `C:\Users\Hi-tech\.vscode\DIMAX Operations Suite\artifacts\screens`
 - Results sheet: `C:\Users\Hi-tech\.vscode\DIMAX Operations Suite\ANDROID_QA_RESULTS.md`
 
-## Latest device route smoke
+## Latest device route smoke (historical APK)
 
-- Date: `2026-06-15`
+- Date: `2026-08-15`
 - Device: `2210129SG / Android 15`
-- App package: `com.anonymous.dimaxinstaller`
+- App package: `com.dimax.operations.installer`
+- APK SHA-256: `22C2F9540E146483CD9E23F7AB5A5B5063059A792D63A61B9CEBD013482E4F35`
 - Login/workspace: `PASS`
 - Calendar: `PASS`
 - Earnings: `PASS`
 - Sync queue: `PASS`
 - Project detail: `PASS`
+- Brand fonts and icons: `PASS`
+- Fresh SQLite bootstrap: `PASS`
+- Offline cold start and online recovery: `PASS`
 - Project Waze handoff: `PASS`
 - Project WhatsApp chooser: `PASS`
 - Project WhatsApp composer/prefill: `PASS by product-owner acceptance on 2026-06-16`
 - Fresh RN/Android crash log: `PASS, no ReactNativeJS/AndroidRuntime/Expo errors after final route capture`
 - Evidence:
-  - `artifacts/device/android-dimax-auto-login-final.png`
-  - `artifacts/device/android-dimax-calendar-deeplink.png`
-  - `artifacts/device/android-dimax-earnings.png`
-  - `artifacts/device/android-dimax-sync-queue.png`
-  - `artifacts/device/android-dimax-project-alpha-fixed.png`
+  - `artifacts/device/android-2026-08-15-fonts-native-fixed.png`
+  - `artifacts/device/android-2026-08-15-sync-serialized.png`
+  - `artifacts/device/android-2026-08-15-project-local-first.png`
+  - `artifacts/device/android-2026-08-15-offline-notice-fixed.png`
+  - `artifacts/device/android-2026-08-15-online-sync-complete.png`
   - `artifacts/screens/android-case-01-project-waze-pass.png`
   - `artifacts/screens/android-case-02-project-whatsapp-chooser-blocked.png`
 
-This closes the mobile Android gate under the owner-approved WhatsApp acceptance condition.
+This evidence closed the gate for the 2026-08-15 APK only. It does not close the
+gate for a newer binary.
+
+## Current Android candidate
+
+- Build date: `2026-08-22`
+- Package: `com.dimax.operations.installer`
+- Build: `PASS` (`:app:assembleDebug`, 386 Gradle tasks)
+- Android policy: minSdk 24, targetSdk 34
+- APK: `mobile/artifacts/android/dimax-installer-debug.apk`
+- APK SHA-256: `2FF4362630E0E50412000F464FC9AED7341C5C659BD4C178ACB2C35AE61E7FA4`
+- Physical-device interaction smoke for this hash: `NOT RUN`
 
 ## Decision rule
 
@@ -98,10 +113,10 @@ Set decision to `NO-GO` if:
 4. Waze or WhatsApp handoff is broken on device.
 
 ## Final decision
-- Decision: `GO`
-- Blocking issue count: `0`
-- Follow-up fix PR needed: `NO`
-- Release comment: `Mobile Android gate accepted for release under product-owner WhatsApp acceptance condition.`
+- Decision: `NO-GO`
+- Blocking issue count: `1`
+- Follow-up fix PR needed: `NO; verification is required before deciding whether code changes are needed`
+- Release comment: `The current APK builds successfully but is not yet covered by fresh physical-device evidence.`
 
 ## Tester summary
 - Device: `2210129SG / serial a269dc99`

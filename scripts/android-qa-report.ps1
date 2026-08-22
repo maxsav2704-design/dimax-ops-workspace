@@ -81,6 +81,38 @@ function Get-RegressionSection {
     }
 }
 
+function Get-AndroidArtifactBindingIssues {
+    param(
+        [Parameter(Mandatory = $true)][string]$SectionBody,
+        [Parameter(Mandatory = $true)][string]$ApkDirectory
+    )
+
+    $result = [System.Collections.Generic.List[string]]::new()
+    $recordedHash = (Get-BacktickValue -Content $SectionBody -Label 'APK SHA-256').ToUpperInvariant()
+    if ($recordedHash -notmatch '^[0-9A-F]{64}$') {
+        $result.Add('Regression APK SHA-256 is missing or invalid.') | Out-Null
+    }
+    elseif (-not (Test-Path -LiteralPath $ApkDirectory -PathType Container)) {
+        $result.Add('Saved Android APK directory is missing.') | Out-Null
+    }
+    else {
+        $apkFiles = @(Get-ChildItem -LiteralPath $ApkDirectory -File -Filter '*.apk')
+        if ($apkFiles.Count -eq 0) {
+            $result.Add('No saved APK artifact was found for the regression proof.') | Out-Null
+        }
+        else {
+            $matchingApk = @($apkFiles | Where-Object {
+                (Get-Sha256FileHash -Path $_.FullName) -eq $recordedHash
+            })
+            if ($matchingApk.Count -eq 0) {
+                $result.Add('Recorded regression APK SHA-256 does not match any saved APK artifact.') | Out-Null
+            }
+        }
+    }
+
+    return @($result)
+}
+
 function Get-AndroidRegressionIssues {
     param(
         [Parameter(Mandatory = $true)][string]$Content,
@@ -128,26 +160,10 @@ function Get-AndroidRegressionIssues {
         }
     }
 
-    $recordedHash = (Get-BacktickValue -Content $section.Body -Label 'APK SHA-256').ToUpperInvariant()
-    if ($recordedHash -notmatch '^[0-9A-F]{64}$') {
-        $result.Add('Regression APK SHA-256 is missing or invalid.') | Out-Null
-    }
-    elseif (-not (Test-Path -LiteralPath $ApkDirectory -PathType Container)) {
-        $result.Add('Saved Android APK directory is missing.') | Out-Null
-    }
-    else {
-        $apkFiles = @(Get-ChildItem -LiteralPath $ApkDirectory -File -Filter '*.apk')
-        if ($apkFiles.Count -eq 0) {
-            $result.Add('No saved APK artifact was found for the regression proof.') | Out-Null
-        }
-        else {
-            $matchingApk = @($apkFiles | Where-Object {
-                (Get-Sha256FileHash -Path $_.FullName) -eq $recordedHash
-            })
-            if ($matchingApk.Count -eq 0) {
-                $result.Add('Recorded regression APK SHA-256 does not match any saved APK artifact.') | Out-Null
-            }
-        }
+    foreach ($issue in @(Get-AndroidArtifactBindingIssues `
+        -SectionBody $section.Body `
+        -ApkDirectory $ApkDirectory)) {
+        $result.Add($issue) | Out-Null
     }
 
     $evidenceMatches = [regex]::Matches(
@@ -227,7 +243,26 @@ function Invoke-AndroidQaSelfTest {
             throw 'Stale regression proof was accepted.'
         }
 
-        Write-Output 'Android QA self-test passed (3 cases).'
+        $incompleteNavigationContent = $content.Replace(
+            'Assigned project detail navigation: `PASS`',
+            'Assigned project detail navigation: `NOT RUN`'
+        )
+        $incompleteNavigationIssues = @(Get-AndroidRegressionIssues `
+            -Content $incompleteNavigationContent `
+            -RootPath $tempDir `
+            -ApkDirectory $apkDir `
+            -Now ([datetimeoffset]::Parse('2026-07-23T12:00:00Z')))
+        if (-not ($incompleteNavigationIssues -match 'Assigned project detail navigation')) {
+            throw 'Incomplete project navigation regression was accepted.'
+        }
+        $artifactIssues = @(Get-AndroidArtifactBindingIssues `
+            -SectionBody (Get-RegressionSection -Content $incompleteNavigationContent).Body `
+            -ApkDirectory $apkDir)
+        if ($artifactIssues.Count -ne 0) {
+            throw 'A valid APK binding was rejected because an unrelated device check was incomplete.'
+        }
+
+        Write-Output 'Android QA self-test passed (4 cases).'
     }
     finally {
         Remove-Item -LiteralPath $tempDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -295,6 +330,12 @@ if ($deviceFilesSaved -eq "YES" -and $deviceCount -eq 0) {
 }
 
 $regressionSection = Get-RegressionSection -Content $content
+$artifactBindingIssues = @()
+if ($null -ne $regressionSection) {
+    $artifactBindingIssues = @(Get-AndroidArtifactBindingIssues `
+        -SectionBody $regressionSection.Body `
+        -ApkDirectory (Join-Path $WorkspaceRoot 'mobile\artifacts\android'))
+}
 $regressionIssues = @(Get-AndroidRegressionIssues `
     -Content $content `
     -RootPath $WorkspaceRoot `
@@ -350,7 +391,7 @@ else {
     $lines.Add(('- Date: `{0}`' -f $regressionSection.Date)) | Out-Null
     $lines.Add(('- Package: `{0}`' -f $regressionPackage)) | Out-Null
     $lines.Add(('- APK SHA-256: `{0}`' -f $regressionHash)) | Out-Null
-    $lines.Add(('- Artifact binding: `{0}`' -f $(if ($regressionIssues.Count -eq 0) { 'PASS' } else { 'BLOCKED' }))) | Out-Null
+    $lines.Add(('- Artifact binding: `{0}`' -f $(if ($artifactBindingIssues.Count -eq 0) { 'PASS' } else { 'BLOCKED' }))) | Out-Null
 }
 $lines.Add("") | Out-Null
 $lines.Add("## Open Items") | Out-Null

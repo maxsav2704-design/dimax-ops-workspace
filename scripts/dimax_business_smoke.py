@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import base64
 import json
 import sys
@@ -132,6 +133,13 @@ def b64(text: str) -> str:
     return base64.b64encode(text.encode("utf-8")).decode("ascii")
 
 
+def cleanup_api_resource(client: ApiClient, path: str) -> None:
+    try:
+        client.request("DELETE", path, expected=(200, 204))
+    except SmokeError as exc:
+        print(f"Business smoke cleanup warning: {exc}", file=sys.stderr)
+
+
 def write_evidence(summary: dict[str, Any], evidence_dir: Path) -> dict[str, str]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -226,6 +234,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--allow-remote-write", action="store_true")
     parser.add_argument("--evidence-dir", default=str(evidence_dir))
     parser.add_argument("--no-evidence", action="store_true")
+    parser.add_argument(
+        "--keep-data",
+        action="store_true",
+        help="Keep temporary smoke resources for manual inspection.",
+    )
     return parser.parse_args()
 
 
@@ -275,6 +288,12 @@ def main() -> int:
         body={"code": door_type_code, "name": f"Smoke Door {suffix}", "is_active": True},
         expected=(201,),
     )
+    if not args.keep_data:
+        atexit.register(
+            cleanup_api_resource,
+            admin,
+            f"/api/v1/admin/door-types/{door_type['id']}",
+        )
     rate = admin.request(
         "POST",
         "/api/v1/admin/installer-rates",
@@ -286,11 +305,23 @@ def main() -> int:
         },
         expected=(201,),
     )
+    if not args.keep_data:
+        atexit.register(
+            cleanup_api_resource,
+            admin,
+            f"/api/v1/admin/installer-rates/{rate['id']}",
+        )
     project = admin.request(
         "POST",
         "/api/v1/admin/projects",
         body={"name": f"Business Smoke {suffix}", "address": f"Smoke Address {suffix}"},
     )
+    if not args.keep_data:
+        atexit.register(
+            cleanup_api_resource,
+            admin,
+            f"/api/v1/admin/projects/{project['id']}",
+        )
 
     order_number = f"SMOKE-{suffix.upper()}"
     csv_payload = (

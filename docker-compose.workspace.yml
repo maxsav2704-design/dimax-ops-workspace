@@ -1,18 +1,26 @@
-x-backend-base: &backend-base
-  build:
-    context: ./backend
-    dockerfile: Dockerfile
+x-backend-runtime: &backend-runtime
+  image: dimax-backend-workspace:local
   env_file:
     - ./backend/.env
   environment:
+    XDG_CACHE_HOME: /tmp/.cache
     DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/dimax
+    JWT_SECRET: ${DIMAX_WORKSPACE_JWT_SECRET:-dimax-workspace-local-only-jwt-secret-2026-rotate-for-production}
     PUBLIC_BASE_URL: http://localhost:8000
+    PUBLIC_APP_BASE_URL: http://localhost:5174
     CORS_ALLOW_ORIGINS: ${DIMAX_PREVIEW_CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:4173,http://127.0.0.1:4173}
     MINIO_ENDPOINT: minio:9000
     MINIO_ACCESS_KEY: minioadmin
     MINIO_SECRET_KEY: minioadmin
     MINIO_BUCKET: dimax
     MINIO_SECURE: "false"
+    EMAIL_ENABLED: "true"
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_TLS: "false"
+    SMTP_USER: ""
+    SMTP_PASSWORD: ""
+    SMTP_FROM: journal@dimax.local
     AUTH_LOGIN_RL_WINDOW_SEC: ${DIMAX_AUTH_LOGIN_RL_WINDOW_SEC:-60}
     AUTH_LOGIN_RL_MAX_REQ: ${DIMAX_AUTH_LOGIN_RL_MAX_REQ:-30}
   volumes:
@@ -60,8 +68,20 @@ services:
       echo 'MinIO bucket ready';
       "
 
+  mailpit:
+    image: axllent/mailpit:v1.30.3
+    restart: unless-stopped
+    environment:
+      MP_DISABLE_VERSION_CHECK: "true"
+      MP_MAX_MESSAGES: "200"
+    ports:
+      - "127.0.0.1:8025:8025"
+
   api:
-    <<: *backend-base
+    <<: *backend-runtime
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -73,21 +93,29 @@ services:
       - "8000:8000"
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15m
 
   sync-health:
-    <<: *backend-base
+    <<: *backend-runtime
     depends_on:
-      db:
+      api:
         condition: service_healthy
     command: python -m app.scripts.run_sync_health_job
     restart: unless-stopped
 
   outbox-worker:
-    <<: *backend-base
+    <<: *backend-runtime
     depends_on:
-      db:
+      api:
         condition: service_healthy
+      mailpit:
+        condition: service_started
       minio:
         condition: service_started
       minio_init:
@@ -96,17 +124,17 @@ services:
     restart: unless-stopped
 
   maintenance-worker:
-    <<: *backend-base
+    <<: *backend-runtime
     depends_on:
-      db:
+      api:
         condition: service_healthy
     command: python -m app.workers.maintenance_worker
     restart: unless-stopped
 
   sync-gc-worker:
-    <<: *backend-base
+    <<: *backend-runtime
     depends_on:
-      db:
+      api:
         condition: service_healthy
     command: python -m app.workers.sync_gc_worker
     restart: unless-stopped
@@ -126,7 +154,7 @@ services:
       NPM_CONFIG_FETCH_TIMEOUT: "120000"
       NPM_CONFIG_FUND: "false"
       VITE_API_BASE_URL: http://localhost:8000
-    cpus: 1.0
+    cpus: 2.0
     ports:
       - "5173:5173"
     volumes:
@@ -137,15 +165,10 @@ services:
     command: >
       sh -c "if [ ! -d node_modules/next ] || [ ! -f node_modules/.package-lock.json ] ||
              [ package-lock.json -nt node_modules/.package-lock.json ]; then npm ci --prefer-offline; fi &&
-             rebuild=0 &&
-             if [ ! -f .next/BUILD_ID ]; then rebuild=1;
-             elif find src public -type f -newer .next/BUILD_ID -print -quit | grep -q .; then rebuild=1;
-             else for file in package.json package-lock.json next.config.mjs postcss.config.js tailwind.config.ts tsconfig.json;
-                  do if [ -f \"$$file\" ] && [ \"$$file\" -nt .next/BUILD_ID ]; then rebuild=1; break; fi; done; fi &&
-             if [ \"$$rebuild\" = \"1\" ]; then npm run build; fi &&
-             npm run start"
+             ./node_modules/.bin/next dev --turbopack -H 0.0.0.0 -p 5173"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   workspace_admin_next:
