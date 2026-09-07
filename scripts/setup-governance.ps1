@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 $WorkspaceRoot = Split-Path -Parent $PSScriptRoot
 $BackendDir = Join-Path $WorkspaceRoot "backend"
 $FrontendDir = Join-Path $WorkspaceRoot "dimax-operations-suite-main"
+$MobileDir = Join-Path $WorkspaceRoot "mobile"
 $BackendScript = Join-Path $BackendDir "scripts\setup_branch_protection.py"
 
 if (-not (Test-Path $BackendScript)) {
@@ -52,6 +53,10 @@ function Invoke-BranchProtection {
     }
 }
 
+Invoke-BranchProtection -RepoDir $WorkspaceRoot -RequiredChecks @(
+    "Workspace Quality Gate / quality-gate"
+)
+
 Invoke-BranchProtection -RepoDir $BackendDir -RequiredChecks @(
     "Backend Tests / quality-gate"
 )
@@ -59,4 +64,8 @@ Invoke-BranchProtection -RepoDir $BackendDir -RequiredChecks @(
 Invoke-BranchProtection -RepoDir $FrontendDir -RequiredChecks @(
     "Frontend Quality Gate / quality-gate",
     "Installer Quality Gate / quality-gate"
+)
+
+Invoke-BranchProtection -RepoDir $MobileDir -RequiredChecks @(
+    "Mobile Quality Gate / quality-gate"
 )

@@ -1,5 +1,9 @@
 # DIMAX Operations Suite - V1 Audit
 
+> Historical snapshot from the web-first `v1.0.0` stage. The current release
+> position, including the offline-first mobile installer candidate, is tracked in
+> `FINAL_PRODUCTION_MATURITY_READINESS.md` and `ANDROID_QA_RESULTS.md`.
+
 Audit date: March 7, 2026
 
 ## 1. Release position

@@ -1,5 +1,52 @@
 # Changelog
 
+## mobile live device pass - March 14, 2026
+
+- confirmed physical Android device baseline for `mobile/`:
+  - APK install
+  - app launch
+  - live installer login
+- updated:
+  - `mobile/MOBILE_VISUAL_QA_READINESS.md`
+  - `mobile/MOBILE_INSTALLER_READINESS.md`
+  - `mobile/README.md`
+  - `WORKSPACE.md`
+
+## visual qa readiness - March 11, 2026
+
+- final live route-matrix visual QA recorded in:
+  - `VISUAL_QA_READINESS.md`
+
+## final pr summary - March 10, 2026
+
+- final multi-repo review/merge summary recorded in:
+  - `FINAL_PR_SUMMARY.md`
+
+## staging demo polish readiness - March 10, 2026
+
+- staging/demo polish cycle recorded in:
+  - `STAGING_DEMO_POLISH_READINESS.md`
+
+## public demo flow readiness - March 10, 2026
+
+- public demo/front-door browser-flow cycle recorded in:
+  - `PUBLIC_DEMO_FLOW_READINESS.md`
+
+## public landing readiness - March 10, 2026
+
+- public landing cycle recorded in:
+  - `PUBLIC_LANDING_READINESS.md`
+
+## localization readiness - March 10, 2026
+
+- multilingual frontend cycle recorded in:
+  - `LOCALIZATION_READINESS.md`
+
+## final production maturity readiness - March 8, 2026
+
+- final production maturity cycle recorded in:
+  - `FINAL_PRODUCTION_MATURITY_READINESS.md`
+
 ## integrations hardening readiness - March 8, 2026
 
 - integrations hardening cycle recorded in:

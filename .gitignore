@@ -1,7 +1,17 @@
 # Workspace metadata
 .idea/
 .vscode/
+.claude/
+CLAUDE.md
 *.log
+.env.demo
+artifacts/
+login-preview*.png
+.tmp/
+
+# Python caches
+__pycache__/
+*.py[cod]
 
 # Backend is maintained in a separate git repository
 backend/
