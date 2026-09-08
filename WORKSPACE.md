@@ -1,5 +1,8 @@
 # DIMAX Workspace (Safe Integration)
 
+Current release evidence and open production blockers:
+[September 2026 release hardening](RELEASE_HARDENING_2026-09.md).
+
 This workspace keeps backend and admin separated, but run together safely:
 
 - `backend/` is the API and database migrations
