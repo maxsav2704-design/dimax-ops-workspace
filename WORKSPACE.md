@@ -48,6 +48,12 @@ Development email is delivered to Mailpit through SMTP on the internal Compose
 network. It never relays messages to external recipients. Production continues
 to require real SMTP credentials validated by `check-production-env`.
 
+API, PostgreSQL and MinIO use `restart: unless-stopped`, like the background
+workers. They recover after a Docker restart unless explicitly stopped.
+The admin development container remains opt-in to avoid starting a second
+frontend alongside the local production preview. No data volumes are recreated
+by this policy. After startup, verify `/ready`, not only `/health`.
+
 Signed journal email smoke:
 
 ```powershell
