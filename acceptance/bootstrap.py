@@ -89,8 +89,9 @@ def main() -> None:
             for code, name in (("ENTRANCE", "Entrance / Входная"), ("FIRE", "Fire / Огнестойкая")):
                 door_type = add_once(
                     DoorTypeORM, f"{company_key}/type/{code}", company_id=company.id,
-                    code=code, name=name, is_active=True, is_critical_default=False,
+                    code=code.lower(), name=name, is_active=True, is_critical_default=False,
                 )
+                door_type.code = code.lower()
                 types.append(door_type)
                 add_once(
                     ProductLibraryItemORM, f"{company_key}/product/{code}", company_id=company.id,
@@ -116,7 +117,7 @@ def main() -> None:
                     ))
                 for door_type in types:
                     add_once(
-                        InstallerRateORM, f"{company_key}/rate/{number}/{door_type.code}",
+                        InstallerRateORM, f"{company_key}/rate/{number}/{door_type.code.upper()}",
                         company_id=company.id, installer_id=installer.id, door_type_id=door_type.id,
                         price=Decimal("250.00"), effective_from=datetime(2026, 1, 1, tzinfo=timezone.utc),
                     )

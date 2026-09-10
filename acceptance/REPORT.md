@@ -57,7 +57,7 @@ Evidence:
 - Local ignored logs: `artifacts/acceptance-20260909/timezone-before.log` and
   `timezone-after.log`. These are API tests, not UI or device evidence.
 
-## Current Remote Checks
+## Timezone Checkpoint Checks
 
 | Gate | Exact revision | Result | Evidence |
 | --- | --- | --- | --- |
@@ -89,6 +89,13 @@ pagefile remains 11.5 GiB, the logical Docker data VHD size remains 37.896 GiB,
 and several protected/reparse directories were excluded or inaccessible. Do not
 attribute the decrease to a particular component without allocation evidence.
 
+## Import Checkpoint
+
+The next step is recorded in [the import checkpoint](steps/2026-09-10-import.md).
+It supersedes the earlier bootstrap-repeat pending status, records the numeric
+import fix and full backend gate, and distinguishes the blocked local UI run
+from automated verification. No production approval is implied.
+
 ## Remaining Acceptance
 
 - Resume isolated UI demo: login, create project, Excel preview/import, distinct
@@ -102,8 +109,9 @@ attribute the decrease to a particular component without allocation evidence.
   send messages to actual recipients during acceptance.
 - Production configuration, external test inbox, HTTPS, owner signing and fresh
   physical-device acceptance remain separate prerequisites.
-- Bootstrap reference data exists but repeat-bootstrap idempotence still needs
-  a second run and comparison before calling the demo reproducible.
+- Pre-change bootstrap repeat idempotence passed. The later code-normalization
+  bootstrap and complete demo reproducibility still need verification after
+  recovery of the local Docker runtime.
 
 No readiness percentage is advanced by this intermediate step. Full criteria
 results and the investor demo script must be completed from observed workflows,

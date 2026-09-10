@@ -74,13 +74,30 @@ services:
     environment:
       MP_DISABLE_VERSION_CHECK: "true"
       MP_MAX_MESSAGES: "200"
-    ports:
-      - "127.0.0.1:8026:8025"
   api:
     <<: *api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log
+  gateway:
+    image: caddy:2.11.4-alpine
+    mem_limit: 64m
+    memswap_limit: 64m
+    cpus: 0.5
+    pids_limit: 64
+    read_only: true
+    cap_drop: [ALL]
+    # The image's Caddy binary carries this file capability, including on high ports.
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    volumes:
+      - ./acceptance/Caddyfile:/etc/caddy/Caddyfile:ro
+    tmpfs:
+      - /data
+      - /config
     ports:
       - "127.0.0.1:8001:8000"
+      - "127.0.0.1:8026:8025"
+    networks: [default, ingress]
+    depends_on: [api, mailpit]
   outbox-worker:
     <<: *api
     profiles: [delivery]
@@ -89,6 +106,7 @@ services:
 networks:
   default:
     internal: true
+  ingress:
 
 volumes:
   acceptance_pgdata:

@@ -16,11 +16,15 @@ An open P0/P1 blocks approval regardless of percentage.
 
 `docker-compose.acceptance.yml` uses a separate Docker project, network, database,
 storage volume, test JWT secret and local Mailpit. No working .env is inherited.
-Its internal Docker network has no external delivery path. Mailpit does not relay.
+API, workers, database, storage and Mailpit stay on an internal Docker network
+without an external delivery path. Mailpit does not relay. Only the stateless
+Caddy gateway joins the ingress network and publishes loopback-only HTTP ports.
+This avoids relying on host port publication from an internal-only network on
+Docker Desktop. The gateway has no credentials, SMTP route or forward-proxy route.
 API: `http://localhost:8001`; admin: `http://localhost:4173`;
 captured email: `http://localhost:8026`.
 
-Run `docker compose -f docker-compose.acceptance.yml up -d db minio mailpit api`.
+Run `docker compose -f docker-compose.acceptance.yml up -d db minio mailpit api gateway`.
 This full-stack command requires a separate resource check first. Do not run it
 alongside native builds on the current 4 GB host.
 Never use the normal workspace seed or business smoke against the working company.
@@ -62,6 +66,34 @@ uncommitted local files, a physical phone, or external delivery.
 UI actions, their expected outcomes and evidence will be recorded in `REPORT.md`.
 Generated screenshots, PDFs, workbooks and command logs belong in ignored
 `artifacts/acceptance-20260909/`, never secrets or actual customer data.
+
+## Admin Acceptance Preview
+
+The frontend `Acceptance Preview` workflow builds the real admin source with
+`NEXT_PUBLIC_API_BASE_URL=http://localhost:8001` and
+`NEXT_DIST_DIR=.next-acceptance-preview`. Download its `acceptance-preview` artifact
+into that directory inside the frontend repository. Verify `SOURCE_COMMIT`
+matches the workflow revision. The artifact omits caches and Linux dependency
+copies; local locked Windows dependencies run `next start --port 4173` with the
+same `NEXT_DIST_DIR`. Keep this separate from the working admin on port 5173.
+Next emits its standalone/start recommendation; this is a local acceptance
+preview, not the production deployment procedure.
+
+Use `http://127.0.0.1:4173/login` when binding Next to `127.0.0.1`. Both localhost
+and IPv4 origins are permitted by the isolated API. Do not point this preview at
+the working API or reuse production accounts.
+
+Control workbooks contain synthetic data only:
+- `valid-9-doors.xlsx`: 8 input rows, 9 doors, 5 entrance and 4 fire doors,
+  2 buildings, total `our_price` 9800 ILS; same apartment may contain
+  different doors. One row expands to two physical doors.
+- `invalid-rows.xlsx`: one valid door, its duplicate, fractional quantity 1.5,
+  negative price and unknown type. Disable automatic type creation and do not
+  authorize partial import when checking atomic rejection.
+
+The seeded door-type codes are lowercase, matching the production catalog and
+file importer. Stable synthetic IDs and rate IDs remain unchanged on reruns.
+Installer rates are 250 ILS per door; they are independent of workbook prices.
 
 ## Inventory
 
