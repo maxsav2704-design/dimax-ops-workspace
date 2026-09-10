@@ -96,6 +96,10 @@ It supersedes the earlier bootstrap-repeat pending status, records the numeric
 import fix and full backend gate, and distinguishes the blocked local UI run
 from automated verification. No production approval is implied.
 
+Runtime recovery and subsequent fixture/readiness corrections are recorded in
+[the runtime checkpoint](steps/2026-09-10-runtime.md). It supersedes the pending
+Docker restart and bootstrap-normalization status above; UI acceptance is separate.
+
 ## Remaining Acceptance
 
 - Resume isolated UI demo: login, create project, Excel preview/import, distinct

@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from pydantic import EmailStr, TypeAdapter
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
@@ -26,6 +27,17 @@ from app.shared.infrastructure.db.session import SessionLocal
 
 def stable_id(key: str) -> uuid.UUID:
     return uuid.uuid5(uuid.NAMESPACE_URL, f"https://example.test/dimax-acceptance/{key}")
+
+
+def acceptance_email(local_part: str) -> str:
+    return str(TypeAdapter(EmailStr).validate_python(f"{local_part}@example.com"))
+
+
+def normalize_acceptance_email(account, email: str) -> None:
+    legacy_email = email.removesuffix("@example.com") + "@example.test"
+    if account.email not in {email, legacy_email}:
+        raise RuntimeError("Refusing to replace an unexpected acceptance account email")
+    account.email = email
 
 
 def main() -> None:
@@ -72,13 +84,14 @@ def main() -> None:
             users = []
             scopes = ("OWNER", "OPERATIONS", "FINANCE", "VIEWER") if company_key == "a" else ("OWNER",)
             for scope in scopes:
-                email = f"{scope.lower()}.{company_key}@example.test"
+                email = acceptance_email(f"{scope.lower()}.{company_key}")
                 user = add_once(
                     UserORM, f"{company_key}/{scope}", company_id=company.id,
                     email=email, full_name=f"Acceptance {company_key.upper()} {scope}",
                     role=UserRole.ADMIN, password_hash=hash_password(password),
                     is_active=True, status="ACTIVE",
                 )
+                normalize_acceptance_email(user, email)
                 add_once(
                     AdminProfileORM, f"{company_key}/{scope}/profile", company_id=company.id,
                     user_id=user.id, admin_scope=scope, can_view_rates=scope in {"OWNER", "FINANCE"},
@@ -99,17 +112,19 @@ def main() -> None:
                     unit="piece", status="ACTIVE",
                 )
             for number in (1, 2):
-                email = f"installer{number}.{company_key}@example.test"
+                email = acceptance_email(f"installer{number}.{company_key}")
                 name = f"Test Installer {company_key.upper()}-{number}"
                 user = add_once(
                     UserORM, f"{company_key}/installer/{number}/user", company_id=company.id,
                     email=email, full_name=name, role=UserRole.INSTALLER,
                     password_hash=hash_password(password), is_active=True, status="ACTIVE",
                 )
+                normalize_acceptance_email(user, email)
                 installer = add_once(
                     InstallerORM, f"{company_key}/installer/{number}", company_id=company.id,
                     full_name=name, email=email, user_id=user.id, is_active=True, status="ACTIVE",
                 )
+                normalize_acceptance_email(installer, email)
                 if session.get(InstallerProfileORM, user.id) is None:
                     session.add(InstallerProfileORM(
                         user_id=user.id, company_id=company.id, installer_id=installer.id,

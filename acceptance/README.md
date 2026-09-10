@@ -24,13 +24,19 @@ Docker Desktop. The gateway has no credentials, SMTP route or forward-proxy rout
 API: `http://localhost:8001`; admin: `http://localhost:4173`;
 captured email: `http://localhost:8026`.
 
-Run `docker compose -f docker-compose.acceptance.yml up -d db minio mailpit api gateway`.
+Run `docker compose -f docker-compose.acceptance.yml up -d --wait --wait-timeout 360 db minio mailpit api gateway`.
 This full-stack command requires a separate resource check first. Do not run it
 alongside native builds on the current 4 GB host.
 Never use the normal workspace seed or business smoke against the working company.
 Never reset working volumes or use global Docker cleanup. Keep automated fixtures
 in database `dimax_acceptance_tests`, separate from UI demo `dimax_acceptance`.
 Outbox worker is opt-in and restricted to this isolated environment.
+The gateway waits for API `/ready`, including a database query. A running process
+alone is not readiness; verify host `http://127.0.0.1:8001/ready` as well.
+Test account addresses use the reserved example domain `example.com`, because
+the real login validator rejects `.test`. SMTP remains confined to Mailpit;
+no external delivery is authorized. Bootstrap updates only the known legacy
+fixture addresses in the isolated database, preserving account and rate IDs.
 
 ## Constrained Local Checks
 

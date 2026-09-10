@@ -77,6 +77,12 @@ services:
   api:
     <<: *api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "5", "--output", "/dev/null", "http://127.0.0.1:8000/ready"]
+      interval: 10s
+      timeout: 8s
+      start_period: 180s
+      retries: 12
   gateway:
     image: caddy:2.11.4-alpine
     mem_limit: 64m
@@ -97,7 +103,11 @@ services:
       - "127.0.0.1:8001:8000"
       - "127.0.0.1:8026:8025"
     networks: [default, ingress]
-    depends_on: [api, mailpit]
+    depends_on:
+      api:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
   outbox-worker:
     <<: *api
     profiles: [delivery]
