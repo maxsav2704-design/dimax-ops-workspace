@@ -114,3 +114,51 @@ does not prove offline behavior of the application.
 - A14 and overall release readiness are not granted complete PASS on these
   source tests. Frozen criteria/weights and percentages remain unchanged.
 - Local commits are not GitHub backups; no push was attempted.
+
+## Connected Phone Follow-Up
+
+Later on September 11, an authorized Android device (model 2210129SG) became
+available. The installed debug APK matched the previously verified SHA-256:
+`2FF4362630E0E50412000F464FC9AED7341C5C659BD4C178ACB2C35AE61E7FA4`.
+No reinstall, app-data reset or new native build was performed.
+
+The owner explicitly approved a temporary database backup. Only the app's
+SQLite DB, WAL and SHM were copied, while DIMAX was stopped, to a dedicated
+Windows Temp directory outside the project. SecureStore was not exported.
+The existing queue contained one failed `DOOR_SET_STATUS` installation event;
+it was preserved rather than discarded or sent to an unchecked backend.
+
+Metro served the current source over USB port 8081, with automatic login off.
+The app API was deliberately set to unreachable phone loopback port 18082;
+there was no API reverse tunnel. The Android bundle returned HTTP 200 and
+8,650,803 bytes and contained the current DB/auth context guards and isolated
+API address. The bundle was inspected in memory, not saved as an artifact.
+This is an API-offline check, not a fully disconnected release-APK test.
+
+Observed native results:
+
+- First cold activity launch: `Status: ok`, total time 1,363 ms. Android reported
+  DIMAX as the resumed activity. No fatal or ReactNativeJS error lines were
+  observed in that process's filtered error log.
+- After stopping only DIMAX, a second temporary DB/WAL/SHM copy was compared
+  using read-only SQLite connections, including WAL state. `quick_check` was
+  `ok`; schema version remained 10.
+- All rows in 11 domain/cache tables were unchanged, including 33 projects,
+  67 doors and two issues. Database owner, sync cursor and last-sync timestamp
+  were unchanged. Every queued event's ID, type, project, timestamps and payload
+  were unchanged. The one event remained `FAILED`; its attempts increased from
+  three to five. Retry metadata is not claimed to be byte-identical.
+- DIMAX was reopened afterwards: cold launch `Status: ok`, total time 907 ms;
+  its resumed activity was confirmed, again with zero observed fatal/JS error
+  lines. These observations do not prove successful rendering of every screen.
+- All six temporary SQLite copies were deleted after the successful comparison:
+  4,045,472 bytes removed, with their exact temporary directory confirmed absent.
+  No DB, screenshot, bundle copy or extra APK was added to the project. Metro
+  remains running for the debug app, with its small logs outside the project.
+
+Screenshot capture was not authorized, so no screenshot was taken and visual
+acceptance is still pending. Online retry/ACK, server idempotency, payroll
+reconciliation, a native account switch and disconnected cold startup remain
+separate acceptance checks. The existing event is still unsent; restoring API
+access requires checking its intended server/account first. This follow-up
+does not close A14 or advance the frozen readiness percentage. No GitHub push.

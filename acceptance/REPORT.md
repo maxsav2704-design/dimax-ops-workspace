@@ -8,6 +8,14 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Connected phone follow-up](steps/2026-09-11-mobile-session-isolation.md#connected-phone-follow-up)
+records successful Android activity startup with the current Metro bundle and
+the API deliberately isolated. Read-only SQLite comparison confirmed unchanged
+domain/cache rows, ownership/cursor and the existing queued event payload after
+startup; all temporary DB copies were then removed outside the project. DIMAX
+was reopened. Visual acceptance, online queue delivery and fully disconnected
+cold startup remain open; this is not full native/offline or release approval.
+
 [Mobile sync session isolation](steps/2026-09-11-mobile-session-isolation.md)
 records the reproduced account-boundary defect and scoped DB/API/sync guards in
 mobile fix `7d9a3fd`. All 223 tests in 27 files, TypeScript and discovery pass.
