@@ -216,3 +216,73 @@ and preview services were not restarted or rebuilt.
 No native queued work was sent, cleared or rewritten by this step. Live phone
 reconnect/ACK and visual acceptance remain open. No full release approval,
 readiness-percentage advance or GitHub backup is claimed.
+
+## Native Queue Recovery
+
+The owner subsequently approved the temporary DB export and DIMAX-only screenshots.
+This supersedes the earlier screenshot restriction for this check, not historical
+evidence. Only the installed app's SQLite DB/WAL/SHM were copied while DIMAX was
+stopped; screenshots required DIMAX to be the focused app. No SecureStore export,
+APK rebuild, app-data reset or server-data mutation was performed.
+
+Read-only preflight found that the pending installation belongs to an old business
+smoke project deleted on September 4. Its door type and installer rate were also
+deleted. The script and audit trail identify the fixture and historical rate, but
+do not justify restoring it or accruing money. The account still matches API 8000,
+not acceptance API 8001. The phone API stayed on unreachable loopback port 18082;
+the only USB reverse tunnel was Metro 8081. No online acceptance was claimed.
+
+Confirmed defects and scoped mobile fix `dcb2165`:
+
+- The queue read ran before authenticated SQLite activation and did not rerun
+  when bootstrap completed. The phone showed an empty/synchronized state alongside
+  a database-not-activated error despite one saved event. Loading now waits for
+  auth, reads within the existing DB context and ignores superseded reads. Failed
+  or unfinished reads cannot produce zero counters or a success/empty claim.
+- Exhausted FAILED/PENDING items could promise automatic retries although the
+  sender excludes them. Presentation and attention/waiting filters now reflect
+  the attempt limit; next-retry metadata excludes exhausted work. No event is
+  silently dropped or reset by these read/presentation changes.
+- The phone displayed `Property 'error' doesn't exist` after a retry. Inspection
+  of its Metro bundle showed the caught error captured inside a deferred generator
+  callback. Error classification/message are now computed before deferred DB work;
+  the original error is rethrown. A subsequent controlled API-offline retry on the
+  same phone showed `Network request failed`, retained the item as FAILED and
+  scheduled the next attempt. Ordinary Node tests alone did not reproduce the
+  native error; no claim of an independently reproduced engine/compiler bug is made.
+
+Verification:
+
+- Final Vitest: 249 PASS in 27 files, 48.77 seconds, exit 0. There are 22 additional
+  cases versus the preceding 227-test checkpoint, not a sum of repeated runs.
+  Tests cover read-state gating, attention classification, RU/EN/HE retry-limit
+  explanations, next-retry query scoping and original-error/queue preservation.
+- Final TypeScript `--noEmit`, test discovery and `git diff --check`: exit 0.
+  The existing supported Node 20 runtime and one test worker were used.
+- Final current-source Android bundle completed in Metro (1,303 modules, 18,867 ms).
+  The phone rendered saved work, attention counters, a retry-limit explanation and
+  a disabled discard action; loading placeholders were also observed. The real
+  manual offline retry succeeded as a recovery test, not as server delivery.
+  Native acceptance of every filter, locale, screen or account switch is not granted.
+- Final read-only SQLite comparison: integrity `ok`, schema 10, same event ID,
+  type, project, creation/occurrence timestamps and payload. Eleven other tables, including sync state,
+  were unchanged; all 67 doors remained. An initial strict comparison flagged one
+  door's `updated_at`: this was traced to the existing manual-retry optimistic
+  update. No other door fields changed. No backup was restored onto the phone.
+- At the final comparison the event was FAILED, attempts 3, with the real network
+  error and scheduled retry. Retry metadata is intentionally not byte-identical
+  to the initial exhausted event. A PostgreSQL read confirmed zero matching sync
+  events and zero completed-work accruals on the intended server.
+- All eight temporary DB/WAL/SHM and screenshot files were deleted afterwards:
+  5,139,764 bytes removed, exact Temp directory confirmed absent. No heavy evidence
+  was added to the project. Only the existing small Metro runtime logs remain
+  outside it while needed by the debug app. DIMAX was reopened: cold activity
+  launch `Status: ok`, 1,209 ms. The API remains deliberately isolated.
+
+No backend/admin source, API contract, prices or schema changed in this follow-up;
+no migration was required. Backend/admin release suites were not rerun for it.
+Next acceptance must use an active, controlled fixture with a valid assignment
+and explicit rate to verify native reconnect, ACK, single accrual and account
+isolation. The preserved deleted-fixture event must not be silently discarded to
+make that test pass. A14, the frozen readiness percentage and production decision
+remain unchanged. No GitHub publication was attempted.

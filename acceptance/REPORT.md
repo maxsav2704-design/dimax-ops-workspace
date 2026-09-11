@@ -8,6 +8,16 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Native queue recovery](steps/2026-09-11-mobile-session-isolation.md#native-queue-recovery)
+records mobile fix `dcb2165`: truthful queue loading/error states, exhausted-retry
+presentation and a phone-reproduced failure of deferred error handling. Final
+mobile checks: 249 PASS in 27 files, TypeScript and discovery PASS. A real API-offline
+retry retained the work and scheduled another attempt; native SQLite comparison
+passed with only expected retry metadata and one local door timestamp changed.
+All eight temporary DB/screenshot files were removed (5,139,764 bytes). The old
+event belongs to a deleted smoke fixture; no server event or accrual was created.
+Native online delivery and full release approval remain open. Local commits only.
+
 [Sync replay follow-up](steps/2026-09-11-mobile-session-isolation.md#replay-follow-up)
 records a reproduced false-acknowledgement defect when an event ID is reused
 with different work, backend fix `2e98c2f` and mobile test commit `dde7847`.
