@@ -8,14 +8,23 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Current mobile native build](steps/2026-09-11-mobile-native-build.md) records a
+successful debug APK build at clean mobile source `515cb12`, with verified
+package/SDK/signature and all four native architectures. The debug APK contains
+no embedded JavaScript. A separate current Android Metro bundle probe passed:
+HTTP 200, 8,646,782 bytes, exit 0; its temporary server and files were cleaned up.
+No phone is detected, so installation, native startup and offline operation
+remain unverified. This checkpoint is local only, not a GitHub backup.
+
 [Mobile preflight and safe launch](steps/2026-09-11-mobile-preflight.md) records
 the first mobile acceptance item: no connected ADB device, an unbooted configured
 emulator, available build tools and a saved APK from an older source revision.
 Mobile fix `515cb12` removes implicit seeded automatic login and requires an
 explicit test API/account for the device launcher. All 189 mobile tests, 14
 launcher checks, typecheck and Expo configuration validation pass locally.
-Native launch, a fresh APK, offline workflows and remote CI remain unverified;
-this checkpoint does not advance the frozen readiness criteria.
+At that checkpoint, native launch, a fresh APK, offline workflows and remote CI
+were unverified. The build and bundle evidence above supersedes only its build
+limitation; the frozen readiness criteria are not advanced.
 
 [Payroll lifecycle verification](steps/2026-09-11-payroll-verification.md) records
 the completed live correction/cancellation/reinstallation chain, independently
