@@ -162,3 +162,57 @@ reconciliation, a native account switch and disconnected cold startup remain
 separate acceptance checks. The existing event is still unsent; restoring API
 access requires checking its intended server/account first. This follow-up
 does not close A14 or advance the frozen readiness percentage. No GitHub push.
+
+## Replay Follow-Up
+
+A read-only identity check matched the phone database owner to exactly one
+active installer in the normal workspace database (API port 8000). There was
+no matching account in the separate acceptance database (port 8001). The normal
+company's change-log range was 20..1784, containing the phone's recorded cursor
+1719. These are identity/cursor checks, not proof that its pending event was
+delivered. No phone session secrets were read and its API remained isolated.
+
+Confirmed P1: the existing `/installer/sync` duplicate acknowledgement checked
+the installer but not the event contents. Reusing an accepted event ID for a
+different door returned `ok=true, applied=false`, allowing a client to discard
+work the server had not applied. Reproduction used both normal lookup and a
+simulated missed lookup followed by the real PostgreSQL unique-key violation.
+This proves neither a random-ID collision rate nor a cross-tenant access bypass.
+
+Backend fix `2e98c2f` compares project, type, payload and client timestamp before
+returning an existing acknowledgement. It preserves the installer guard, original
+record and existing conflict code. Equivalent offsets and JSON key reordering
+remain valid retries; omitted and legacy naive timestamps are covered. The older
+race fixture now consistently omits the timestamp in both stored event and retry.
+No schema, pricing, role or public response fields changed. The separate legacy
+`sync-queue/batch` endpoint was regression-tested, not redesigned by this fix.
+
+Verification, all local:
+
+- Initial harness run: 15 setup errors because the new fixture omitted the
+  mandatory project address; corrected. This was not a product failure.
+- Actual pre-fix reproduction: 3 PASS / 2 FAIL, stopped after two failures;
+  61.70 seconds, exit 1. Both failures were false successful acknowledgements.
+- Post-fix backend: 64 PASS, 271.92 seconds, exit 0. Includes all 16 new cases,
+  existing snapshot/batch sync, assignment atomicity, financial constraints and
+  OpenAPI tests. Real JWT login and committed PostgreSQL API transactions were
+  used for the new cases. Repeated completion retained one 250.00 accrual, one
+  history entry and one change-log entry.
+- Mobile test commit `dde7847`: 227 PASS in 27 files, 63.74 seconds, exit 0;
+  TypeScript and discovery passed. Four added cases cover network/503/missing-ACK
+  identity preservation and retained queue payload on rejection. These use
+  controlled API/SQLite doubles, not a physical transport interruption.
+- Tests used only `dimax_acceptance_tests`, still at migration
+  `0060_installer_journal_handoff`. Replay projects/events remaining: zero.
+  All temporary test containers were automatically removed. No new APK, image,
+  database copy, screenshot or large report artifact was created.
+
+Both local API containers were restarted to load the fix. Each returned HTTP
+200 on `/health` and `/ready`, and the existing admin preview on port 4173
+returned HTTP 200 for `/projects`. The normal API's slow startup progressed
+through Alembic to Uvicorn without an observed startup error. Databases, storage
+and preview services were not restarted or rebuilt.
+
+No native queued work was sent, cleared or rewritten by this step. Live phone
+reconnect/ACK and visual acceptance remain open. No full release approval,
+readiness-percentage advance or GitHub backup is claimed.

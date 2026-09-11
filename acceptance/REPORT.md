@@ -8,6 +8,14 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Sync replay follow-up](steps/2026-09-11-mobile-session-isolation.md#replay-follow-up)
+records a reproduced false-acknowledgement defect when an event ID is reused
+with different work, backend fix `2e98c2f` and mobile test commit `dde7847`.
+Backend: 64 PASS; mobile: 227 PASS, TypeScript and discovery passed. The phone's
+account matches port 8000, not the isolated acceptance database on port 8001.
+No native queued work was sent. Temporary test containers and synthetic replay
+records were cleaned up; live reconnect/ACK and full release acceptance remain open.
+
 [Connected phone follow-up](steps/2026-09-11-mobile-session-isolation.md#connected-phone-follow-up)
 records successful Android activity startup with the current Metro bundle and
 the API deliberately isolated. Read-only SQLite comparison confirmed unchanged
