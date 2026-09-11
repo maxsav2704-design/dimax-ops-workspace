@@ -8,6 +8,15 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile preflight and safe launch](steps/2026-09-11-mobile-preflight.md) records
+the first mobile acceptance item: no connected ADB device, an unbooted configured
+emulator, available build tools and a saved APK from an older source revision.
+Mobile fix `515cb12` removes implicit seeded automatic login and requires an
+explicit test API/account for the device launcher. All 189 mobile tests, 14
+launcher checks, typecheck and Expo configuration validation pass locally.
+Native launch, a fresh APK, offline workflows and remote CI remain unverified;
+this checkpoint does not advance the frozen readiness criteria.
+
 [Payroll lifecycle verification](steps/2026-09-11-payroll-verification.md) records
 the completed live correction/cancellation/reinstallation chain, independently
 reconciled ledger totals, 69 completed backend checks and 62 admin tests.
