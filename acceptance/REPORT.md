@@ -126,6 +126,10 @@ Docker restart and bootstrap-normalization status above; UI acceptance is separa
 
 ## Remaining Acceptance
 
+The financial lifecycle follow-up is recorded in
+[the payroll checkpoint](steps/2026-09-11-payroll.md), including confirmed defects,
+local fixes and explicitly pending verification. It does not close A15 by inference.
+
 - Continue the isolated UI demo from the 9 imported doors with calendar actions.
   Assignment, separate visibility, base completions and the corrected dashboard
   route-return were observed; preview counting/locale issues remain open.
