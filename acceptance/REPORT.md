@@ -8,6 +8,14 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile cold resync](steps/2026-09-11-mobile-cold-resync.md) records reproduced
+P1 defects in full-snapshot optimistic replay, revoked-assignment handling and
+stale door rollback. Mobile fix `040c02b` passes 204 tests in 26 files, TypeScript
+and test discovery. The updated Android bundle probe passed (HTTP 200, 8,648,489
+bytes, exit 0); actual device startup, SQLite/offline persistence and full sync
+acceptance remain open.
+No backend, admin, money or live project data changed; no remote backup is claimed.
+
 [Current mobile native build](steps/2026-09-11-mobile-native-build.md) records a
 successful debug APK build at clean mobile source `515cb12`, with verified
 package/SDK/signature and all four native architectures. The debug APK contains
