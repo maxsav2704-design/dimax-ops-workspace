@@ -8,6 +8,13 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile sync session isolation](steps/2026-09-11-mobile-session-isolation.md)
+records the reproduced account-boundary defect and scoped DB/API/sync guards in
+mobile fix `7d9a3fd`. All 223 tests in 27 files, TypeScript and discovery pass.
+The updated Android bundle probe passed: HTTP 200, 8,650,804 bytes, exit 0.
+Native persistence and the remaining account-switch paths are not approved;
+this is local evidence, not a remote backup.
+
 [Mobile cold resync](steps/2026-09-11-mobile-cold-resync.md) records reproduced
 P1 defects in full-snapshot optimistic replay, revoked-assignment handling and
 stale door rollback. Mobile fix `040c02b` passes 204 tests in 26 files, TypeScript
