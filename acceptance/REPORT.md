@@ -8,14 +8,27 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
-[Live Excel and session acceptance](steps/2026-09-11-import-session.md) records
-the newly reproduced JWT-expiry defect and targeted regression checks. The actual
-browser imported 9 synthetic doors with a reconciled client total of 9800.00;
-repeating the import added nothing, and analysis of an invalid workbook kept
-Import disabled and left the same 9 doors unchanged. This supersedes earlier
-statements that live login/import was blocked. Assignment/completion, earnings,
-offline, journal/PDF and production acceptance are not complete. New commits are
-local only pending explicit permission for publication to the public GitHub repo.
+[Assignment/completion acceptance](steps/2026-09-11-assignment.md) records a
+reproduced ownership/concurrent-completion defect, backend correction `db007e8`,
+109 expanded integration checks, 39 architecture/security/OpenAPI checks and 77
+mobile source compatibility checks. Actual UI assignment, separate installer
+visibility and three completions reconciled with payroll 750 and revenue 3400.
+This is web-client evidence, not native/offline acceptance.
+
+[Dashboard window correction](steps/2026-09-11-dashboard-window.md) records the
+separate defect discovered during reconciliation: a module-level timestamp kept
+new work outside the dashboard's period. Correction `0ffb4f2` passes 32 focused
+and related UI regressions plus the TypeScript/24-page production build. A fresh
+live route-return check shows the fourth installation and payroll 1000 without
+a full reload. Final synthetic state is 4/9 installed, revenue 4400, payroll 1000;
+the earlier three-work reconciliation remains recorded as an intermediate state.
+
+[Live Excel and session acceptance](steps/2026-09-11-import-session.md) remains
+the evidence for JWT recovery, nine imported synthetic doors, duplicate prevention
+and strict invalid-workbook behavior. Earlier workspace/frontend checkpoints were
+published through `afbe415`/`52b59fe`. Latest backend/frontend publication was
+separately rejected pending explicit permission for the public destinations;
+local commits are retained. No full new-revision release or production approval.
 
 ## Environment and Resources
 
@@ -113,9 +126,9 @@ Docker restart and bootstrap-normalization status above; UI acceptance is separa
 
 ## Remaining Acceptance
 
-- Continue the isolated UI demo from the 9 imported doors: assignments and
-  calendar, then installer completion. Preview counting/locale issues remain
-  recorded in the latest checkpoint; valid import and repeat safety were observed.
+- Continue the isolated UI demo from the 9 imported doors with calendar actions.
+  Assignment, separate visibility, base completions and the corrected dashboard
+  route-return were observed; preview counting/locale issues remain open.
 - Reconcile the independently calculated base/addon/correction/reversal example
   across admin, mobile and reports; the narrow timezone fix does not prove A15.
 - Offline restart/reconnect, retries, reassignment, cold resync and account switch
