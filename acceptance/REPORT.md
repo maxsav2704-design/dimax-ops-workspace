@@ -1,10 +1,21 @@
-# Release acceptance progress: September 10, 2026
+# Release acceptance progress: September 11, 2026
 
 ## Decision
 
 Full live-demo, pilot and production approval are NOT granted. This is an
 intermediate evidence record, not a completed acceptance report. Criteria and
 weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
+
+## Latest Checkpoint
+
+[Live Excel and session acceptance](steps/2026-09-11-import-session.md) records
+the newly reproduced JWT-expiry defect and targeted regression checks. The actual
+browser imported 9 synthetic doors with a reconciled client total of 9800.00;
+repeating the import added nothing, and analysis of an invalid workbook kept
+Import disabled and left the same 9 doors unchanged. This supersedes earlier
+statements that live login/import was blocked. Assignment/completion, earnings,
+offline, journal/PDF and production acceptance are not complete. New commits are
+local only pending explicit permission for publication to the public GitHub repo.
 
 ## Environment and Resources
 
@@ -102,8 +113,9 @@ Docker restart and bootstrap-normalization status above; UI acceptance is separa
 
 ## Remaining Acceptance
 
-- Resume isolated UI demo: login, create project, Excel preview/import, distinct
-  doors per apartment, assignments and calendar, then installer completion.
+- Continue the isolated UI demo from the 9 imported doors: assignments and
+  calendar, then installer completion. Preview counting/locale issues remain
+  recorded in the latest checkpoint; valid import and repeat safety were observed.
 - Reconcile the independently calculated base/addon/correction/reversal example
   across admin, mobile and reports; the narrow timezone fix does not prove A15.
 - Offline restart/reconnect, retries, reassignment, cold resync and account switch
@@ -113,9 +125,8 @@ Docker restart and bootstrap-normalization status above; UI acceptance is separa
   send messages to actual recipients during acceptance.
 - Production configuration, external test inbox, HTTPS, owner signing and fresh
   physical-device acceptance remain separate prerequisites.
-- Pre-change bootstrap repeat idempotence passed. The later code-normalization
-  bootstrap and complete demo reproducibility still need verification after
-  recovery of the local Docker runtime.
+- Fixture normalization/bootstrap completed after Docker recovery. Complete demo
+  reproducibility by another person still requires acceptance evidence.
 
 No readiness percentage is advanced by this intermediate step. Full criteria
 results and the investor demo script must be completed from observed workflows,
