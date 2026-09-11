@@ -8,6 +8,14 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Payroll lifecycle verification](steps/2026-09-11-payroll-verification.md) records
+the completed live correction/cancellation/reinstallation chain, independently
+reconciled ledger totals, 69 completed backend checks and 62 admin tests.
+It also records the project page's Decimal-string/USD display defect and its
+scoped frontend correction, successful production build and standalone startup fix.
+Final build/runtime checks are recorded in that file;
+this is not full release or native/offline approval.
+
 [Assignment/completion acceptance](steps/2026-09-11-assignment.md) records a
 reproduced ownership/concurrent-completion defect, backend correction `db007e8`,
 109 expanded integration checks, 39 architecture/security/OpenAPI checks and 77
