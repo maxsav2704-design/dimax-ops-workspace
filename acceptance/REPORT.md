@@ -8,6 +8,19 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Server authority during offline conflicts](steps/2026-09-14-sync-server-authority.md)
+records High mobile fix `2bd4b4f`: same-version server door state survives queue
+rejection, discard and retry. SQLite schema 11 adds local metadata without changing
+event identity or API payloads. Final mobile checks: 401 tests in 32 files,
+TypeScript and discovery PASS. Native migration of both account databases and
+structured before/after comparisons PASS; the old failed event remains intact,
+A-1 queue is empty and domain data is unchanged. Metro was recovered in CI mode
+after stale-bundle/resource issues; subsequent edits require a runtime restart.
+Acceptance API is ready again, with unchanged 5/9 installations and 1,250 ILS
+payroll. The limited backend rerun ended without a pytest summary and is NOT a
+pass. Physical lost-ACK injection and offline reassignment remain unverified;
+no full release or production approval is claimed.
+
 [Native offline completion and payroll time](steps/2026-09-14-native-offline-completion.md)
 records one real phone-created offline completion, persistence through restart,
 automatic delivery, ACK cleanup and duplicate-safe 250 ILS accrual. Admin totals
