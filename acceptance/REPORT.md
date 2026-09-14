@@ -8,6 +8,15 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Journal outbox IDs and transaction correlation](steps/2026-09-15-journal-outbox-ids.md)
+records backend `ff723dd`: manual send responses and audits now carry actual
+queue UUIDs. Final focused regression: 49 PASS, including each channel, resends,
+three rollback points and real local Mailpit/MinIO delivery. The first pre-fix
+probe timed out without a test report and is not counted. Owned test containers,
+fixture data and messages were cleaned. After restart the API is healthy,
+`/ready` confirms the database is ready, and the admin journal route returns 200.
+No frontend/mobile changes, external messages, remote backup or release GO.
+
 [Human journal invitation links](steps/2026-09-15-journal-links.md) records backend
 `2ddb375`: manual email/WhatsApp, fallback email and template previews now point
 to the human signing page, sharing ACTIVE/unsigned/unexpired eligibility with
