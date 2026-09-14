@@ -8,6 +8,16 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile auth cleanup and storage failures](steps/2026-09-14-mobile-auth-lifecycle.md)
+records mobile commit `acb2559`: stale cleanup callbacks cannot detach a newer
+account, credential batches settle before releasing the auth storage queue, and
+logout attempts local cleanup even after a session-read error. Persistent removal
+failures now have an RU/EN/HE warning and guarded retry. Final source checks:
+395 tests in 32 files, TypeScript, discovery, Expo config and the existing local
+security/production-contract checks PASS. No phone actions or native deployment
+occurred in this step; real logout/reentry, offline reconnection and full release
+acceptance remain open. Local commits only, no remote backup claimed.
+
 [Mobile profile/session isolation](steps/2026-09-14-mobile-profile-session.md)
 records mobile commit `c47ddb9`: profile refresh writes now share the existing
 auth mutation queue, late storage completion cannot report a successful old
