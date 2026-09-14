@@ -8,6 +8,16 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile profile/session isolation](steps/2026-09-14-mobile-profile-session.md)
+records mobile commit `c47ddb9`: profile refresh writes now share the existing
+auth mutation queue, late storage completion cannot report a successful old
+login, and offline startup rejects another installer's cached profile within the
+same company. Final checks: 376 tests in 31 files, TypeScript and discovery PASS.
+The USB Metro tunnel was restored; the existing phone profile still showed one
+queued action. Touch/scroll, sign-out cancellation and account switching remain
+unverified. The source change was not deployed to the phone in this checkpoint.
+No queued work was sent or deleted. Local commits only, no production approval.
+
 [Mobile profile queue state](steps/2026-09-14-mobile-profile-queue.md) records
 mobile commit `1e20ebb`: an unread or failed queue no longer appears successfully
 synchronized, and sign-out confirmation rechecks local work without sending it.
