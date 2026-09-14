@@ -8,6 +8,17 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Acceptance gateway stability](steps/2026-09-14-gateway-stability.md) traces the
+intermittent browser failures to observed gateway DNS/connect errors. Cached IPv4
+service discovery, aligned idle connection lifetime and restricted-origin error
+responses are deployed only to the acceptance proxy. Final isolated regression:
+8 scenarios PASS (9 Node tests including the parent), 148.40 seconds, exit 0;
+lost-response writes are not replayed. Ten live readiness checks return 200,
+unauthenticated identity returns 401, and journal/calendar/projects load. Two
+post-restart log inspections show zero gateway errors. Temporary fixtures are
+removed. Host-load/DNS reliability and production infrastructure are not certified;
+full release and PDF/signature/delivery acceptance remain open.
+
 [Journal form and unsigned PDF freshness](steps/2026-09-14-journal-form.md)
 records backend `9f5b488` and admin `4ab4dec`: a reachable simulated journal form
 now reads saved work and uses real server actions; unsigned PDF downloads/shares

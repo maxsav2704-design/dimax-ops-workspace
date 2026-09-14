@@ -4,7 +4,37 @@
 }
 
 http://:8000 {
-    reverse_proxy api:8000
+    @admin_origin {
+        header Origin http://localhost:4173
+        header Origin http://127.0.0.1:4173
+    }
+    reverse_proxy {
+        # This Compose network is IPv4-only. Cache service discovery, not an IP.
+        dynamic a api 8000 {
+            versions ipv4
+            refresh 30s
+            resolvers 127.0.0.11
+            dial_timeout 5s
+        }
+        # A lost write response is ambiguous: never replay it at this layer.
+        lb_retries 0
+        transport http {
+            dial_timeout 5s
+            # Uvicorn closes idle HTTP connections after 5 seconds.
+            keepalive 4s
+        }
+    }
+
+    handle_errors {
+        header @admin_origin {
+            Access-Control-Allow-Origin {http.request.header.Origin}
+            Access-Control-Allow-Credentials true
+        }
+        header Vary Origin
+        header Cache-Control no-store
+        header Content-Type application/json
+        respond `{"error":{"code":"UPSTREAM_UNAVAILABLE","message":"The API connection failed. Check the saved result before repeating a write."}}` {err.status_code}
+    }
 }
 
 http://:8025 {

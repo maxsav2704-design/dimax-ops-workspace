@@ -33,6 +33,30 @@ in database `dimax_acceptance_tests`, separate from UI demo `dimax_acceptance`.
 Outbox worker is opt-in and restricted to this isolated environment.
 The gateway waits for API `/ready`, including a database query. A running process
 alone is not readiness; verify host `http://127.0.0.1:8001/ready` as well.
+Gateway service discovery uses Docker's IPv4 resolver with a 30-second cache;
+it does not pin a container IP. After container recreation, allow this cache to
+refresh before diagnosing the new address. Its four-second idle connection limit
+is below Uvicorn's five-second default. Proxy write retries remain disabled.
+Gateway transport errors preserve their HTTP failure status and allow browsers
+to read the JSON from the two configured admin origins; this does not replace
+API authorization or restrict non-browser clients.
+After a lost write response, read the saved state before repeating the action.
+
+Run the disposable gateway regression with existing local images and Node 20:
+
+```powershell
+$env:DIMAX_GATEWAY_CHECK = "1"
+node --test scripts/acceptance-gateway.test.mjs
+Remove-Item Env:DIMAX_GATEWAY_CHECK
+```
+
+The test uses its own labelled internal network, fake HTTP API and loopback proxy.
+It never joins the acceptance application network or mounts a database. It covers
+lost-response non-replay, origin restrictions, validation and outage recovery.
+It removes its containers and network in `finally`; after an interrupted process,
+inspect resources with label `dimax.acceptance.gateway-check` and remove only
+the confirmed run's resources. Never substitute a global Docker prune.
+
 Test account addresses use the reserved example domain `example.com`, because
 the real login validator rejects `.test`. SMTP remains confined to Mailpit;
 no external delivery is authorized. Bootstrap updates only the known legacy
