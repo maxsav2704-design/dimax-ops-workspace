@@ -8,6 +8,18 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Native offline completion and payroll time](steps/2026-09-14-native-offline-completion.md)
+records one real phone-created offline completion, persistence through restart,
+automatic delivery, ACK cleanup and duplicate-safe 250 ILS accrual. Admin totals
+are now 5/9 installed and 1,250 ILS payroll; A-1 month total is 1,000 ILS. The
+check exposed a High work-date/rate defect in both sync paths, corrected in backend
+commit `37059ea`. Final checks: 33 backend and 74 mobile sync tests PASS; the earlier
+600-second backend timeout is not a pass. Post-restart acceptance `/ready` returned
+HTTP 200/database ready after a slow startup; phone earnings show current data and
+admin totals reconcile. Temporary artifacts removed: 22 files, 3,871,576 bytes.
+No lost-response injection on the physical transport, full release-suite pass or
+production approval is claimed.
+
 [Admin/mobile data-source reconciliation](steps/2026-09-14-admin-mobile-parity.md)
 records the port/company mismatch, corrected launch configuration and live API
 parity for the selected Test Installer A-1. Four door IDs, statuses and versions
