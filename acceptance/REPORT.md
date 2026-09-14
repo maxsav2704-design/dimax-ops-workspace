@@ -1,4 +1,4 @@
-# Release acceptance progress: September 14, 2026
+# Release acceptance progress: September 15, 2026
 
 ## Decision
 
@@ -7,6 +7,19 @@ intermediate evidence record, not a completed acceptance report. Criteria and
 weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
+
+[Signed journal archive and isolated delivery](steps/2026-09-15-journal-integrity.md)
+records central signed-PDF preservation, bounded canvas-signature validation,
+visible PDF notes and Israel-local timestamps. The final combined journal run
+has 60 PASS, exit 0, including real MinIO/SMTP Mailpit attachment verification.
+Supplemental core E2E/Mailpit has 2 PASS; final geometry/freshness has 27 PASS.
+Together these cover 62 unique cases without double-counting repeated tests.
+Both short sample PDFs were rendered and visually inspected; temporary files and
+test containers were removed. Backend commit `56ca995` is local only. After a slow
+restart the API is healthy, `/ready` confirms database readiness, and the reloaded
+admin journal retains its five rows and saved draft. No acceptance business data
+or phone state changed; full PDF localization/native/external delivery and
+production approval remain open. No GitHub backup is claimed.
 
 [Acceptance gateway stability](steps/2026-09-14-gateway-stability.md) traces the
 intermittent browser failures to observed gateway DNS/connect errors. Cached IPv4
