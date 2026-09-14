@@ -8,6 +8,15 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile authenticated cache isolation](steps/2026-09-14-mobile-cache-isolation.md)
+records P1 protection for calendar, earnings, journals and project details across
+account changes, mobile commit `0a38b0c`. Final checks: 324 tests in 28 files,
+TypeScript and discovery PASS. The Android bundle includes the fix; a cold phone
+launch and bundle delivery were observed with API access deliberately isolated.
+The post-restart UI check was not completed because another app was foreground;
+native account-switch/queue persistence and online acceptance remain open. No
+existing queued work was sent or cleared. No remote backup or full release approval.
+
 [Deleted-project installer access](steps/2026-09-12-deleted-project-access.md)
 records reproduced unauthorized mutations after project deletion and backend fix
 `53189d0`. Verification passed: 24 targeted and 76 related backend checks (96
