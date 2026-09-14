@@ -8,6 +8,15 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile profile queue state](steps/2026-09-14-mobile-profile-queue.md) records
+mobile commit `1e20ebb`: an unread or failed queue no longer appears successfully
+synchronized, and sign-out confirmation rechecks local work without sending it.
+Final checks: 354 tests in 29 files, TypeScript and discovery PASS. The updated
+Android bundle and cold-started profile displayed one queued action. ADB touch/
+scroll effects remain unconfirmed; actual sign-out/cancellation and account-switch
+acceptance are still open. Temporary phone inspection/screenshot files were
+removed. No working queue delivery, credential clearing or remote backup claimed.
+
 [Mobile authenticated cache isolation](steps/2026-09-14-mobile-cache-isolation.md)
 records P1 protection for calendar, earnings, journals and project details across
 account changes, mobile commit `0a38b0c`. Final checks: 324 tests in 28 files,
