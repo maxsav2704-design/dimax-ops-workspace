@@ -8,6 +8,18 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Admin/mobile data-source reconciliation](steps/2026-09-14-admin-mobile-parity.md)
+records the port/company mismatch, corrected launch configuration and live API
+parity for the selected Test Installer A-1. Four door IDs, statuses and versions
+match the acceptance admin; admin access is denied, monthly earnings are 750 ILS.
+Native account switching, API-offline cached cold launch, reconnection and final
+SQLite-to-PostgreSQL parity PASS. All 13 old-account data tables and its one failed
+event are unchanged. Final Metro has no test credentials or auto-login. These
+checks do not establish new offline work replay/ACK, a production APK test or
+release approval; no remote backup is claimed.
+Mobile configuration/documentation is committed as `b3962c7`. Temporary device
+inspection artifacts were removed: 16 files, 4,483,761 bytes.
+
 [Mobile auth cleanup and storage failures](steps/2026-09-14-mobile-auth-lifecycle.md)
 records mobile commit `acb2559`: stale cleanup callbacks cannot detach a newer
 account, credential batches settle before releasing the auth storage queue, and

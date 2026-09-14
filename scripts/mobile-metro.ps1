@@ -1,7 +1,7 @@
 param(
     [ValidateSet("start", "smoke", "self-test")]
     [string]$Action = "start",
-    [string]$ApiBaseUrl = "http://localhost:8000",
+    [string]$ApiBaseUrl = "",
     [ValidateRange(1, 65535)]
     [int]$Port = 8081,
     [ValidateSet("localhost", "lan")]
@@ -45,6 +45,15 @@ function Test-SupportedNodeVersion {
     param([Parameter(Mandatory = $true)][version]$Version)
 
     return $Version.Major -eq 20 -and $Version -ge $MinimumNodeVersion
+}
+
+function Set-MetroApiEnvironment {
+    param([string]$ExplicitApiBaseUrl)
+
+    # With no override, Expo owns shell/.env precedence and the app's dev fallback.
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitApiBaseUrl)) {
+        $env:EXPO_PUBLIC_API_BASE_URL = $ExplicitApiBaseUrl.Trim().TrimEnd('/')
+    }
 }
 
 function Resolve-PreferredNodePath {
@@ -352,6 +361,31 @@ function Start-DeviceReadyMetro {
 }
 
 function Invoke-SelfTest {
+    $savedApiBaseUrl = $env:EXPO_PUBLIC_API_BASE_URL
+    try {
+        $env:EXPO_PUBLIC_API_BASE_URL = "http://127.0.0.1:8001"
+        Set-MetroApiEnvironment -ExplicitApiBaseUrl ""
+        if ($env:EXPO_PUBLIC_API_BASE_URL -ne "http://127.0.0.1:8001") {
+            throw "Metro must preserve the selected shell API when no override is supplied."
+        }
+        Set-MetroApiEnvironment -ExplicitApiBaseUrl " http://127.0.0.1:8012/ "
+        if ($env:EXPO_PUBLIC_API_BASE_URL -ne "http://127.0.0.1:8012") {
+            throw "An explicit Metro API must take precedence."
+        }
+        Remove-Item Env:EXPO_PUBLIC_API_BASE_URL
+        Set-MetroApiEnvironment -ExplicitApiBaseUrl " "
+        if (Test-Path Env:EXPO_PUBLIC_API_BASE_URL) {
+            throw "Metro must let Expo load .env files when the shell API is absent."
+        }
+    }
+    finally {
+        if ($null -eq $savedApiBaseUrl) {
+            Remove-Item Env:EXPO_PUBLIC_API_BASE_URL -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:EXPO_PUBLIC_API_BASE_URL = $savedApiBaseUrl
+        }
+    }
     $cases = @(
         @{ Version = [version]"20.18.0"; Expected = $true },
         @{ Version = [version]"20.20.2"; Expected = $true },
@@ -391,7 +425,7 @@ function Invoke-SelfTest {
         throw "Metro cache recovery classification self-test failed."
     }
 
-    Write-Output "Mobile Metro self-test passed (12 cases)."
+    Write-Output "Mobile Metro self-test passed (15 cases)."
 }
 
 function Invoke-Smoke {
@@ -411,7 +445,9 @@ function Invoke-Smoke {
     New-Item -ItemType Directory -Path $smokeDir -Force | Out-Null
     $env:CI = "1"
     $env:EXPO_OFFLINE = "1"
-    $env:EXPO_PUBLIC_API_BASE_URL = $ApiBaseUrl
+    $env:EXPO_PUBLIC_API_BASE_URL = if ([string]::IsNullOrWhiteSpace($ApiBaseUrl)) {
+        "http://localhost:8000"
+    } else { $ApiBaseUrl }
     $env:NODE_ENV = "development"
 
     try {
@@ -492,13 +528,16 @@ switch ($Action) {
         Invoke-Smoke
     }
     "start" {
-        $env:EXPO_PUBLIC_API_BASE_URL = $ApiBaseUrl
+        Set-MetroApiEnvironment -ExplicitApiBaseUrl $ApiBaseUrl
         $env:NODE_ENV = "development"
         $nodeExe = Resolve-PreferredNodePath
         $nodeVersion = Get-NodeVersion -NodePath $nodeExe
         Write-Host "Starting mobile Metro..."
         Write-Host "- mobile dir:  $MobileDir"
-        Write-Host "- api base:    $ApiBaseUrl"
+        $apiDescription = if ([string]::IsNullOrWhiteSpace($env:EXPO_PUBLIC_API_BASE_URL)) {
+            "Expo .env configuration (app development fallback if unset)"
+        } else { $env:EXPO_PUBLIC_API_BASE_URL }
+        Write-Host "- api base:    $apiDescription"
         Write-Host "- port:        $Port"
         Write-Host "- host mode:   $HostMode"
         Write-Host "- max workers: $MaxWorkers"

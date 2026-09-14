@@ -886,7 +886,6 @@ function Start-MobileMetro {
             "-ExecutionPolicy", "Bypass",
             "-File", (Join-Path $PSScriptRoot "mobile-metro.ps1"),
             "-Action", "start",
-            "-ApiBaseUrl", "http://localhost:8000",
             "-Port", "8081",
             "-HostMode", "localhost",
             "-MaxWorkers", "1"
