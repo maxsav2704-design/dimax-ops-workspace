@@ -8,6 +8,17 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Human journal invitation links](steps/2026-09-15-journal-links.md) records backend
+`2ddb375`: manual email/WhatsApp, fallback email and template previews now point
+to the human signing page, sharing ACTIVE/unsigned/unexpired eligibility with
+admin/installer snapshots. PDF/media API URLs remain unchanged and signed PDFs
+remain sendable without dead signing links. Final focused run: 49 PASS, exit 0,
+including real MinIO/Mailpit invitation and signed attachment checks. The test
+container/messages were cleaned. After a slow restart the acceptance API is
+healthy, the database is ready and the reloaded admin journal retains its draft
+and five rows. Acceptance business data and frontend/mobile source are unchanged.
+No remote backup or release GO is claimed.
+
 [Signed journal archive and isolated delivery](steps/2026-09-15-journal-integrity.md)
 records central signed-PDF preservation, bounded canvas-signature validation,
 visible PDF notes and Israel-local timestamps. The final combined journal run
