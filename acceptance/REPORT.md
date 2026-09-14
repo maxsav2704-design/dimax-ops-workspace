@@ -8,6 +8,18 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Native lost-ACK preparation and backend follow-up](steps/2026-09-14-native-lost-ack.md)
+records 14 passing fault-relay tests, the separately passing batch/no-accrual
+case and five passing snapshot replay/reassignment cases (156.88 seconds, exit 0).
+The earlier short replay attempt timed out; the complete later summary, not its
+progress output, establishes PASS for these five cases. This is not a full gate.
+Native injection remains unverified: the observation window received no work
+event, and the authorized USB Profile tap still did not navigate. Normal phone
+connectivity is restored and the relay is stopped. Current A-1 has one project,
+five assigned doors (four installed), zero queued events and unchanged 1,000 ILS
+net earnings. The old account's 13 tables and failed event are unchanged. All
+temporary snapshots/relay logs and one-off test containers were removed.
+
 [Server authority during offline conflicts](steps/2026-09-14-sync-server-authority.md)
 records High mobile fix `2bd4b4f`: same-version server door state survives queue
 rejection, discard and retry. SQLite schema 11 adds local metadata without changing

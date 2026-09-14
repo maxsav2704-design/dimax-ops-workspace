@@ -52,9 +52,67 @@ stop DIMAX after the first dropped ACK, before the automatic retry, so the real
 queue can be read consistently. A physical tap was requested from the user;
 USB taps are not used and no event is manufactured in SQLite.
 
+## Follow-up results
+
+The 600-second observation window ended without a matching completion. The relay
+log contained only its startup line, not an `ack_dropped` event. The observer
+exited 2 without disconnecting or stopping the phone. The direct API tunnel was
+then restored (`tcp:8001 -> tcp:8001`) before stopping the verified relay PID.
+Metro remains on `tcp:8081 -> tcp:8081`. Fault injection is no longer armed.
+
+The user authorized operating all controls remotely. A fresh shell touchscreen
+tap at the observed Profile button returned exit 0, but the project screen
+remained unchanged. This is not evidence of a successful press. No cause of the
+ignored input was established, and no Android security setting was changed.
+Registered deep links still navigate successfully. Windows window discovery
+eventually recovered after two timeouts and a helper reset; it exposed no open
+phone-control window. No new mirroring software was installed.
+
+A separate four-case backend replay attempt exceeded its 180-second bound.
+Docker's `die` event recorded exitCode 124 and execDuration 186 seconds; the
+outer Compose shell returned 1. It is NOT counted as PASS.
+
+The remaining five cases were rerun together with a 450-second process bound:
+
+- `test_sync_lost_response_replay_keeps_one_installation_and_accrual`: all four
+  timestamp variants PASS, including two repeated deliveries per variant.
+- `test_bulk_reassignment_notifies_previous_installer_removed_from_you`: PASS.
+- Final pytest summary: **5 passed in 156.88 seconds**, shell exit 0.
+
+A 45-second diagnostic traceback during bulk reassignment showed FastAPI route
+and response-field construction; the test subsequently passed (51.90 seconds for
+its call). This is not a proven production performance cause or a database-lock
+diagnosis. Together with the single batch/no-accrual test above, all six cases
+from the earlier incomplete checkpoint now have successful follow-up results.
+This does not constitute the complete backend release suite.
+
+## Data reconciliation and cleanup
+
+Consistent final SQLite copies were read with DIMAX stopped. Both integrity
+checks passed. All 13 old-account tables equal their baseline rows, including
+the one FAILED event. Current A-1 ownership is correct: one project, five doors
+(four INSTALLED, one NOT_INSTALLED), zero queued events and no foreign-project
+door. The selected B-1-101 door remains NOT_INSTALLED, version 0.
+
+Read-only PostgreSQL confirms the same target assignment/state. Across the whole
+project there are five installed and four uninstalled doors. Net ledger totals
+remain A-1 = 1,000.00 ILS and A-2 = 250.00 ILS. No new work or accrual occurred.
+The selected uncompleted door remains assigned to A-1 for the pending native
+check; A-1 has five assignments rather than the earlier four. No project or door
+was created or removed, and no completion was manufactured through SQL/API.
+
+Removed the exact owned temporary snapshot/log directory after verifying its
+resolved path, parent and absence of reparse points: 15 files, 3,485,767 bytes.
+The directory and all one-off acceptance test containers are verified absent.
+No APK, exported bundle or screenshot was retained. The existing Metro logs and
+server remain necessary for the dev client. DIMAX was reopened; its final UI
+shows the target project, 4/5 installed, zero queued events and the target filter.
+
 ## Status
 
-Physical completion and lost-ACK verification are pending the requested tap.
-No native lost-response PASS, new accrual, full release or production readiness
-is claimed at this checkpoint. The result and cleanup must be recorded before
-closing the physical check. Local commits only; no GitHub publication is implied.
+Server replay/reassignment checks and relay isolation tests PASS. The physical
+lost-ACK and offline-reassignment workflows remain **NOT VERIFIED** until actual
+button input can be executed and observed. Re-arm the relay and observer before
+attempting that completion; the current phone connection is deliberately normal.
+No native lost-response PASS, full release or production readiness is claimed.
+Local commits only; no GitHub publication is implied.
