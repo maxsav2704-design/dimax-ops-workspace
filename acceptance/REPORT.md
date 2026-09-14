@@ -8,6 +8,18 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Journal form and unsigned PDF freshness](steps/2026-09-14-journal-form.md)
+records backend `9f5b488` and admin `4ab4dec`: a reachable simulated journal form
+now reads saved work and uses real server actions; unsigned PDF downloads/shares
+regenerate the file while existing signed PDFs are preserved. 48 focused tests,
+changed-file lint and production build PASS. The new preview is running on 4173.
+One clearly marked DRAFT in Acceptance A verifies five installed rows, saved-note
+persistence, dirty-action guards and discard navigation. No live signing/delivery
+or door/payroll changes occurred. Test API recovered to healthy after a slow
+restart; transient browser read failures recovered but remain undiagnosed.
+Full PDF/language, delivery, concurrent editing and native acceptance remain open.
+Only local commits were made; no remote backup or production approval is claimed.
+
 [Native lost-ACK preparation and backend follow-up](steps/2026-09-14-native-lost-ack.md)
 records 14 passing fault-relay tests, the separately passing batch/no-accrual
 case and five passing snapshot replay/reassignment cases (156.88 seconds, exit 0).
