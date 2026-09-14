@@ -51,3 +51,7 @@ jobs:
           & .\scripts\release-status.ps1 -SelfTest
           & .\scripts\release-handoff.ps1 -SelfTest
           & .\scripts\android-qa-report.ps1 -SelfTest
+
+      - name: Verify acceptance sync fault isolation
+        shell: pwsh
+        run: node --test .\scripts\acceptance-sync-relay.test.mjs
