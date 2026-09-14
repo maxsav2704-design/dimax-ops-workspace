@@ -1,4 +1,4 @@
-# Release acceptance progress: September 11, 2026
+# Release acceptance progress: September 14, 2026
 
 ## Decision
 
@@ -7,6 +7,15 @@ intermediate evidence record, not a completed acceptance report. Criteria and
 weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
+
+[Deleted-project installer access](steps/2026-09-12-deleted-project-access.md)
+records reproduced unauthorized mutations after project deletion and backend fix
+`53189d0`. Verification passed: 24 targeted and 76 related backend checks (96
+unique), 249 mobile tests, TypeScript and test discovery. Historical payroll
+corrections remain available. The earlier interrupted/OOM runs are not passes.
+Both APIs were restored and returned database-ready responses after resource
+recovery. Phone connection is confirmed; native follow-up is recorded separately
+in that checkpoint. No full offline/production approval or GitHub backup claimed.
 
 [Native queue recovery](steps/2026-09-11-mobile-session-isolation.md#native-queue-recovery)
 records mobile fix `dcb2165`: truthful queue loading/error states, exhausted-retry
