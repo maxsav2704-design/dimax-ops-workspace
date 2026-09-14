@@ -113,7 +113,7 @@ restriction remains. Do not describe a local commit as a GitHub backup.
   viewport; overflow auto, scrollHeight 762/clientHeight 435. Cancel works;
   subsequent DOM observation confirms zero remaining custom modals.
 
-## Additional unresolved findings
+## Additional findings from the initial audit
 
 - Medium: an already-open event information frame retains the old title/time
   after successful editing; choosing the updated event card refreshes it.
@@ -130,3 +130,47 @@ restriction remains. Do not describe a local commit as a GitHub backup.
   successful result across follow-up runs. This is not the full release gate.
 - Physical phone clicks, broader CRUD and exports/delivery acceptance remain
   unverified. The request to test every button is not fully completed.
+
+## Follow-up: three reported UI defects
+
+Scope: the three calendar/template findings above, not a full release gate.
+Admin source and regression tests are saved in local commit `87f6846`.
+
+- Calendar selection now follows the refreshed query's event object. The
+  information frame and a subsequently opened editor use the same title/time
+  as the calendar card. Existing filtering/selection behavior is preserved.
+- Successful deletion closes the editor for that event and its information
+  frame. Failed deletion keeps the form and error available for retry.
+  Save and Delete cannot run concurrently from the editor footer.
+- Template Apply/Delete require a loaded selection and are disabled during
+  loading, loading failure or an active action. Selection and Save are also
+  blocked while pending; an empty template list still permits creating a new
+  template after loading completes. Matching handler guards protect requests.
+- Added six regression cases. Before the calendar fix both calendar cases
+  reproduced the old panel and non-closing editor; template pending/reload
+  cases reproduced enabled actions. Initial fixture corrections fixed an
+  incorrect Edit label and async loading waits, not production assertions.
+- Post-fix Calendar + shared Dialog: 13 PASS. Journal: 11 PASS after correcting
+  the empty-select matcher and selecting the journal heading instead of
+  ambiguous repeated text. Changed-file ESLint and git diff --check PASS.
+- Production Next.js/webpack build PASS, TypeScript PASS, 24 pages generated.
+  Preview on port 4173 now runs this build, PID 19664. Only the verified old
+  DIMAX preview PID 10060 was replaced; backend/containers were not restarted.
+- Live browser PASS: QA THREE DEFECTS 20260914, September 14, inspection,
+  no project/installer. Renamed to QA THREE DEFECTS 20260914 UPDATED and end
+  changed from 10:00 to 11:00 using native keyboard input. Without clicking
+  the card again, the open frame displayed the updated title and 09:00..11:00;
+  the editor closed, and reopening it displayed the saved values.
+- Live deletion PASS: after pressing Delete, zero dialogs, information frames
+  and test cards remain. Screenshot confirms no blocking overlay. Reload and
+  Add Event/Cancel still work. Read-only SQL confirms ZERO matching test events.
+- The acceptance company has no journals. Template empty/loading/error/pending
+  states were verified by component tests, not by creating a real journal or
+  sending email/WhatsApp. Broader journal/delivery acceptance is not claimed.
+- Removed this build's cache after validating the absolute path and absence
+  of reparse points. Kept the running standalone files. Restored only Next's
+  auto-added config changes; pre-existing next-env.d.ts/tsconfig.json edits
+  remain uncommitted. No screenshot or database dump file was generated.
+- These three reported defects are resolved. Remaining phone and broader
+  end-to-end acceptance gaps listed above are outside this change.
+- No API contract, backend model, migration, payroll or mobile change.
