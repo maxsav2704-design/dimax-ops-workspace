@@ -1,4 +1,4 @@
-# Release acceptance progress: September 15, 2026
+# Release acceptance progress: September 21, 2026
 
 ## Decision
 
@@ -7,6 +7,17 @@ intermediate evidence record, not a completed acceptance report. Criteria and
 weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
+
+[Journal PDF languages and pagination](steps/2026-09-21-journal-pdf-locales.md)
+records the RU/EN/HE document language, migration 0061, draft selector and mobile
+preparation. Focused checks: backend 88, admin 27 and mobile 83 PASS; changed-file
+ESLint and mobile TypeScript PASS. All 10 pages of the long PDF fixtures were
+visually inspected. Empty/legacy/rollback migration checks and both isolated DB
+upgrades passed. Production admin build passes and runs on 4173; API readiness
+is verified after a slow startup. The login page renders, but the old session
+expired: authenticated selector verification awaits sign-in. Temporary QA files,
+containers, migration DB and new build cache were removed. Local commits only;
+this is not native, external-delivery or full-release approval.
 
 [Journal outbox IDs and transaction correlation](steps/2026-09-15-journal-outbox-ids.md)
 records backend `ff723dd`: manual send responses and audits now carry actual
