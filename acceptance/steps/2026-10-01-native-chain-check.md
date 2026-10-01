@@ -105,3 +105,11 @@ Removed the exact owned snapshot/probe directory after absolute-path/reparse
 checks: **20 files, 10,546,526 bytes**; absence verified. The owned phone UI XML
 was also removed. No APK/export directory retained. Local Git only, no GitHub
 push or remote-backup claim. No full-release pass or 100% readiness claim.
+
+## Subsequent physical confirmation
+
+The user subsequently pressed Installed. The persisted native event, lost-ACK
+replay, single 250.00 ILS accrual and phone earnings display now PASS; see
+`2026-10-01-native-offline-delivery.md` for exact evidence. That follow-up also
+restored the direct 8001 API tunnel. The offline environment and pending status
+above describe this earlier checkpoint, not the current phone state.
