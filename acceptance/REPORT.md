@@ -378,3 +378,11 @@ local fixes and explicitly pending verification. It does not close A15 by infere
 No readiness percentage is advanced by this intermediate step. Full criteria
 results and the investor demo script must be completed from observed workflows,
 not inferred from these successful source checks.
+
+## Native Add-on Checkpoint, October 1
+
+The current physical-phone add-on, lost-ACK replay and earnings checks are recorded
+in [the native add-on checkpoint](steps/2026-10-01-native-addon-payroll.md), which
+also links the preceding issue lifecycle check. Use its explicit verification
+status for this block; historical CI results above do not certify newer commits.
+The full production and cross-client reconciliation criteria remain separate.
