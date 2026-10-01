@@ -12,12 +12,12 @@ const event = {
 const auth = (claims = { company_id: scope.companyId, sub: scope.userId }) =>
   `Bearer header.${Buffer.from(JSON.stringify(claims)).toString("base64url")}.test-signature`;
 
-async function harness(t, handler) {
+async function harness(t, handler, faultScope = scope) {
   const upstream = http.createServer(handler);
   upstream.listen(0, "127.0.0.1");
   await once(upstream, "listening");
   const events = [];
-  const relay = createSyncAckRelay({ upstreamPort: upstream.address().port, scope, onEvent: (item) => events.push(item) });
+  const relay = createSyncAckRelay({ upstreamPort: upstream.address().port, scope: faultScope, onEvent: (item) => events.push(item) });
   relay.listen(0, "127.0.0.1");
   await once(relay, "listening");
   t.after(async () => {
@@ -107,4 +107,37 @@ for (const result of [{ status: 403, ok: false, applied: false }, { status: 200,
 
 test("requires an exact fault scope", () => {
   assert.throws(() => createSyncAckRelay({ upstreamPort: 8001, scope: {} }), /exact company/);
+});
+
+const addonScope = { companyId: scope.companyId, userId: scope.userId, projectId: scope.projectId,
+  addonTypeId: "test-addon", qtyDone: "1.50" };
+const addonEvent = { ...event, type: "ADDON_FACT_CREATE", payload: { addon_type_id: "test-addon", qty_done: "1.50" } };
+
+test("drops one add-on ACK and forwards the exact replay unchanged", async (t) => {
+  const bodies = [];
+  const { send, events } = await harness(t, (req, res) => respond(req, res,
+    { applied: bodies.length === 0 }, (body) => bodies.push(body)), addonScope);
+  await assert.rejects(send([addonEvent]), /fetch failed/);
+  assert.equal((await (await send([addonEvent])).json()).acks[0].applied, false);
+  assert.deepEqual(bodies, Array(2).fill(JSON.stringify({ events: [addonEvent] })));
+  assert.deepEqual(events, [
+    { type: "ack_dropped", client_event_id: event.client_event_id },
+    { type: "ack_forwarded", client_event_id: event.client_event_id, applied: false },
+  ]);
+});
+
+for (const changed of [event, { ...addonEvent, payload: { ...addonEvent.payload, qty_done: "2.50" } },
+  { ...addonEvent, payload: { ...addonEvent.payload, addon_type_id: "other" } }]) {
+  test(`passes through work outside the selected add-on: ${JSON.stringify(changed.payload)}`, async (t) => {
+    const { send, events } = await harness(t, (req, res) => respond(req, res), addonScope);
+    assert.equal((await send([changed])).status, 200);
+    assert.deepEqual(events, []);
+  });
+}
+
+test("rejects ambiguous or incomplete add-on fault scopes", () => {
+  for (const faultScope of [{ ...addonScope, doorId: "door" }, { ...addonScope, qtyDone: undefined },
+    { ...addonScope, qtyDone: "0" }, { ...addonScope, qtyDone: "NaN" }]) {
+    assert.throws(() => createSyncAckRelay({ upstreamPort: 8001, scope: faultScope }), /exact company/);
+  }
 });

@@ -23,7 +23,12 @@ function scopedEvent(request, body, scope) {
     const { events } = JSON.parse(body.toString());
     if (claims.company_id !== scope.companyId || claims.sub !== scope.userId || events?.length !== 1) return null;
     const event = events[0];
-    return event.type === "DOOR_SET_STATUS" && event.project_id === scope.projectId &&
+    if (event.project_id !== scope.projectId || typeof event.client_event_id !== "string") return null;
+    if (scope.addonTypeId) {
+      return event.type === "ADDON_FACT_CREATE" && event.payload?.addon_type_id === scope.addonTypeId &&
+        event.payload?.qty_done === scope.qtyDone ? event : null;
+    }
+    return event.type === "DOOR_SET_STATUS" &&
       event.payload?.door_id === scope.doorId && event.payload?.status === "INSTALLED" &&
       typeof event.client_event_id === "string" ? event : null;
   } catch {
@@ -33,8 +38,12 @@ function scopedEvent(request, body, scope) {
 
 export function createSyncAckRelay({ upstreamPort, scope, onEvent = () => {} }) {
   if (!Number.isInteger(upstreamPort) || upstreamPort < 1 || upstreamPort > 65535) throw new Error("Invalid upstream port");
-  if (![scope?.companyId, scope?.userId, scope?.projectId, scope?.doorId].every((id) => typeof id === "string" && id.length > 0)) {
-    throw new Error("An exact company, user, project and door scope is required");
+  const hasDoor = typeof scope?.doorId === "string" && scope.doorId.length > 0;
+  const hasAddon = typeof scope?.addonTypeId === "string" && scope.addonTypeId.length > 0 &&
+    typeof scope?.qtyDone === "string" && /^\d{1,10}(?:\.\d{1,2})?$/.test(scope.qtyDone) && Number(scope.qtyDone) > 0;
+  if (![scope?.companyId, scope?.userId, scope?.projectId].every((id) => typeof id === "string" && id.length > 0) ||
+      (hasDoor ? Boolean(scope?.addonTypeId || scope?.qtyDone) : !hasAddon)) {
+    throw new Error("An exact company, user, project and either door or add-on/quantity scope is required");
   }
   let droppedEventId = null;
   const server = http.createServer((request, response) => {
@@ -122,7 +131,10 @@ export function createSyncAckRelay({ upstreamPort, scope, onEvent = () => {} }) 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { values } = parseArgs({ options: { "door-id": { type: "string" }, port: { type: "string", default: "18001" } } });
+  const { values } = parseArgs({ options: {
+    "door-id": { type: "string" }, "addon-type-id": { type: "string" }, quantity: { type: "string" },
+    port: { type: "string", default: "18001" },
+  } });
   const port = Number(values.port);
   if (!Number.isInteger(port) || port < 1024 || port > 65535 || [8000, 8001, 8081].includes(port)) throw new Error("Invalid relay port");
   const relay = createSyncAckRelay({
@@ -132,6 +144,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       userId: "028de8c2-35de-50bf-9f7d-fecb35b17180",
       projectId: "6423143b-4122-4685-8f8f-20fe848bc8b7",
       doorId: values["door-id"],
+      addonTypeId: values["addon-type-id"],
+      qtyDone: values.quantity,
     },
     onEvent: (event) => process.stdout.write(`${JSON.stringify(event)}\n`),
   });
