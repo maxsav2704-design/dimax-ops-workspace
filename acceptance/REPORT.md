@@ -424,3 +424,27 @@ Admin invitation management, controlled external delivery, confirmed-rate payrol
 activation and mobile sync remain open. A link is a bearer capability, not verified
 factory identity. No real message, signature, native test, remote backup or full
 release PASS is claimed. Temporary migration/browser-test artifacts were removed.
+
+## Factory Price Admin Checkpoint, October 2
+
+The [admin management checkpoint](steps/2026-10-02-factory-price-management.md)
+adds `/price-lists`: versioned drafts, catalog-based decimal entry, cancellation,
+named representative invitations, one-time manual link sharing, revocation and
+decision history in RU/EN/HE. OWNER/OPERATIONS can manage prices with rate access;
+FINANCE can read them; VIEWER/installers are denied. No confirm-as-factory action,
+automatic external delivery, activation or historical repricing was introduced.
+
+Final selected frontend regression: 71 PASS in 6 files. Changed-file ESLint,
+production build/TypeScript (26 pages) and 6 mocked Playwright cases PASS.
+Desktop/mobile-width screenshots were inspected, and owned browser outputs
+removed. Existing local configuration edits remain outside the feature commit.
+The local preview is available on 4173 against acceptance API 8001. The acceptance
+database still contains no factory price lists/invitations and its completed-work
+checksum is unchanged. Backend/mobile suites were not rerun this UI-only step.
+
+This supersedes the absent admin-management status above, not the remaining
+controlled delivery, legacy-rate reconciliation, confirmed-rate activation,
+mobile sync and release gates. Auth-event resets can discard unsaved forms;
+side-by-side comparison is still pending. No native test, real factory approval,
+GitHub backup or full production PASS is claimed.
+Local admin commit: `41ac9ee`; backend checklist-only commit: `19156d5`.

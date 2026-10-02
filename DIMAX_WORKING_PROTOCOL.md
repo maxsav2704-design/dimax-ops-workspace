@@ -44,7 +44,8 @@
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
 `acceptance/steps/2026-10-02-factory-price-list-drafts.md` and
-`acceptance/steps/2026-10-02-factory-price-approval.md`; this section defines the
+`acceptance/steps/2026-10-02-factory-price-approval.md` and
+`acceptance/steps/2026-10-02-factory-price-management.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
