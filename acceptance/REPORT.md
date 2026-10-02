@@ -405,3 +405,22 @@ rollback migration smoke PASS; both isolated databases are at 0063 and five
 acceptance business-table checksums are unchanged. This is draft infrastructure,
 not factory confirmation, price activation, UI/mobile rollout or release approval.
 Only local Git commits are made; no remote backup is claimed.
+
+## Factory Confirmation Checkpoint, October 2
+
+The [factory confirmation checkpoint](steps/2026-10-02-factory-price-approval.md)
+records backend `e7851c7` and admin `588d4c5`: hashed, expiring/revocable personal
+links, explicit version-bound factory decisions, confirmation/revocation race
+protection and the RU/EN/HE public page. Final selected backend regression:
+225 PASS. Frontend component tests: 8 PASS; browser checks with mocked responses:
+3 PASS, including inspected desktop/mobile-width screenshots. Changed-file lint,
+Next production build/TypeScript and guarded clean/roundtrip migration smoke PASS.
+
+Both isolated databases are now at 0064. Five acceptance business-table checksums
+are unchanged, and no factory prices/invitations were seeded there. Live API
+readiness and routes were checked after restarting only the acceptance API.
+The page records approval but does not activate prices or reprice prior earnings.
+Admin invitation management, controlled external delivery, confirmed-rate payroll
+activation and mobile sync remain open. A link is a bearer capability, not verified
+factory identity. No real message, signature, native test, remote backup or full
+release PASS is claimed. Temporary migration/browser-test artifacts were removed.
