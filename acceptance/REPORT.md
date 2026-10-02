@@ -395,3 +395,13 @@ through a personal link. [The price-authority checkpoint](steps/2026-10-02-price
 separates current installer-input protection from this still-pending workflow.
 Earlier payroll PASS results do not establish factory price approval. This new
 business requirement blocks production approval until implemented and verified.
+
+The [factory price-list draft checkpoint](steps/2026-10-02-factory-price-list-drafts.md)
+adds backend commit `709ba08`: tenant-scoped immutable draft versions, reasons and
+agreement references, idempotent creation, concurrency protection and atomic audit.
+Final price-list tests: 49 PASS; the expanded run's 170 other cases PASS, with the
+test-helper correction and separate rerun recorded explicitly. Guarded fresh/
+rollback migration smoke PASS; both isolated databases are at 0063 and five
+acceptance business-table checksums are unchanged. This is draft infrastructure,
+not factory confirmation, price activation, UI/mobile rollout or release approval.
+Only local Git commits are made; no remote backup is claimed.

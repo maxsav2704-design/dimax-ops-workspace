@@ -42,8 +42,9 @@
   roles. Factory price confirmation is separate from journal signatures.
 
 Implementation status and the ordered rollout are tracked in
-`acceptance/steps/2026-10-02-price-authority.md`; this section defines the agreed
-business rule, not a claim that the factory-confirmation workflow already exists.
+`acceptance/steps/2026-10-02-price-authority.md` and the subsequent
+`acceptance/steps/2026-10-02-factory-price-list-drafts.md`; this section defines the
+agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
 - Architecture: boundaries, naming, duplication, dead code.
