@@ -386,3 +386,12 @@ in [the native add-on checkpoint](steps/2026-10-01-native-addon-payroll.md), whi
 also links the preceding issue lifecycle check. Use its explicit verification
 status for this block; historical CI results above do not certify newer commits.
 The full production and cross-client reconciliation criteria remain separate.
+
+## Price Authority Requirement, October 2
+
+The owner requires one price list for all projects, including requested/agreed
+edits, with explicit confirmation of each version by the factory representative
+through a personal link. [The price-authority checkpoint](steps/2026-10-02-price-authority.md)
+separates current installer-input protection from this still-pending workflow.
+Earlier payroll PASS results do not establish factory price approval. This new
+business requirement blocks production approval until implemented and verified.

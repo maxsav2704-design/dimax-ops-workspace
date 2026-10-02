@@ -20,6 +20,31 @@
 - Do not introduce abstractions without clear value.
 - Do not change APIs broadly without need.
 
+## Price Authority
+- The factory supplies the work prices. Only an authorized administrator enters
+  or proposes changes to them; an installer never sets a price or earned amount.
+- Use one company price list across all projects, including installation and
+  additional work. Project-specific plans must not become an unapproved override.
+- The factory representative confirms a specific price-list version through a
+  personal link. An administrator recording a verbal approval is not a substitute.
+- A requested/agreed change creates a new version requiring factory confirmation.
+  Until then the previous confirmed version remains active. Never silently edit
+  a confirmed price list or treat opening the link as confirmation.
+- Keep the change request/reason, agreement reference and decision history with
+  the version: who entered it, which representative confirmed it, and when.
+- Mobile shows the confirmed installer rate as read-only. Installers submit the
+  performed work and quantity; the server calculates earnings from confirmed
+  terms and records their version/rate in immutable earning snapshots.
+- Previously earned amounts are not recalculated when the price list changes.
+  Corrections need a separate authorized, traceable business operation.
+- Existing prices must not be labelled factory-confirmed without real evidence.
+  A factory representative and a construction-site/customer signer are distinct
+  roles. Factory price confirmation is separate from journal signatures.
+
+Implementation status and the ordered rollout are tracked in
+`acceptance/steps/2026-10-02-price-authority.md`; this section defines the agreed
+business rule, not a claim that the factory-confirmation workflow already exists.
+
 ## What We Check In Every Module
 - Architecture: boundaries, naming, duplication, dead code.
 - Product logic: whether the workflow is complete end-to-end.
