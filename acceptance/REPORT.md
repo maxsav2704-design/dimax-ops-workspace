@@ -501,3 +501,38 @@ No migration, native test, real factory decision or external message is claimed.
 Preview: 4173 against acceptance API 8001. No GitHub backup or 100-percent
 production readiness is claimed; the public-remote restriction remains unresolved.
 Local backend commit: `e4dac1a`; local admin commit: `f38d109`.
+
+## Factory Price Timeline Engine, October 3
+
+The [timeline checkpoint](steps/2026-10-03-price-timeline.md) adds migration
+0065 and an internal company-scoped transition/execution-time quote engine.
+Activation rechecks factory evidence and prerequisites under the company lock,
+requires authorized OWNER/OPERATIONS rate access, explicit review/reason and
+expected-version/retry checks, and atomically records history/audit. Effective
+times cannot be supplied by the client; downgrade cannot discard that history.
+
+Quotes select the version effective at execution, not upload. Only an explicitly
+classified pre-transition versionless queue uses the first confirmed list;
+missing/damaged first evidence or a missing price cannot fall forward to a later
+amendment. Cached-version conflicts, decimal quantity/amount bounds and frozen
+unit/rate evidence are enforced. No activation route or UI action is exposed.
+Quote provenance is not yet stored in the earning ledger and existing payroll
+writers/manual corrections are not switched; mobile cache/sync remains next.
+
+Final selected regression: 316 backend tests PASS in 494.54 seconds, including
+54 timeline cases plus existing factory APIs, addons, earning corrections and
+architecture checks. Fresh/rollback/metadata/history-protection smoke PASS in
+the guarded temporary DB, which was removed. Both isolated schemas are at 0065,
+with zero current acceptance prices/decisions/activations and no test activations
+left. All five current business checksums match the preceding checkpoint.
+
+Acceptance API 8001 is healthy; final strict readiness and unauthenticated 401
+checks PASS. Live OpenAPI retains the readonly false earnings flag and exposes
+no activation route. Existing admin preview 4173 returns HTML/200. Normal
+API 8000 was not restarted/migrated; admin/mobile builds and native tests were
+not rerun. Initial clock-sensitive test/probe errors are recorded in the
+checkpoint and excluded from PASS. The existing admin config edits are preserved.
+No external message, real factory decision or complete release GO is claimed.
+Local commits only; no GitHub backup while the public-remote restriction remains.
+Local backend commit: `52f31e0`. Admin remains at `f38d109` with its existing
+config edits; mobile remains at `f5eaeae`.
