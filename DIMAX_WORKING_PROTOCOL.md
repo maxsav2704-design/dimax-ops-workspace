@@ -37,6 +37,15 @@
   terms and records their version/rate in immutable earning snapshots.
 - Previously earned amounts are not recalculated when the price list changes.
   Corrections need a separate authorized, traceable business operation.
+- Offline work uses the confirmed price effective at execution time, not the
+  price current when the device uploads it. Preserve the version and rate in
+  the earning record; an installer-supplied amount is never authoritative.
+- First-rollout exception, explicitly agreed on October 3: old queued offline
+  work without a confirmed price version uses the first confirmed company price
+  list, not a later amendment. This does not reprice already recorded earnings
+  and does not bypass assignment, duplicate or quantity checks. If the work type
+  has no price in that first list, keep the work for an authorized resolution;
+  do not invent a price or silently select a later version.
 - Existing prices must not be labelled factory-confirmed without real evidence.
   A factory representative and a construction-site/customer signer are distinct
   roles. Factory price confirmation is separate from journal signatures.
@@ -46,7 +55,8 @@ Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-factory-price-list-drafts.md` and
 `acceptance/steps/2026-10-02-factory-price-approval.md` and
 `acceptance/steps/2026-10-02-factory-price-management.md` and
-`acceptance/steps/2026-10-03-price-reconciliation.md`; this section defines the
+`acceptance/steps/2026-10-03-price-reconciliation.md` and
+`acceptance/steps/2026-10-03-price-application-check.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module

@@ -472,3 +472,32 @@ gates remain open. Mobile was unchanged; no native test or external message was
 performed. Local preview: 4173 against isolated API 8001. No GitHub backup or
 100-percent production readiness is claimed.
 Local backend commit: `d3fdad7`; local admin commit: `e4a0119`.
+
+## Factory Price Application Check, October 3
+
+The [pre-application checkpoint](steps/2026-10-03-price-application-check.md)
+adds a readonly selected-version check of the exact factory receipt/snapshot,
+company work-price coverage, catalog availability/units and legacy transition
+issues. A CONFIRMED label alone cannot pass. RU/EN/HE distinguish BLOCKED,
+REVIEW_REQUIRED and VERIFIED; VERIFIED does not mean ACTIVE, and the report
+always returns `affects_earnings=false`. There is no activation or payroll write.
+
+Final selected regression: 218 backend and 51 frontend tests PASS. Changed-file
+lint, production build/TypeScript (26 pages) and 7 mocked browser cases PASS.
+Summary and scrolled-table screenshots were inspected; footer visibility and
+modal interaction restoration are tested. Live API readiness, the additive
+contract and unauthenticated 401 were verified. All five acceptance business
+checksums still match; price tables remain empty and both schemas remain at 0064.
+Owned browser outputs were removed after inspection. Initial fixture/JSX errors
+and the first OpenAPI timeout are recorded, not counted as successful gates.
+
+Offline policy is explicitly agreed: confirmed execution-time prices for new
+work; the first confirmed company list for old queued work without a version.
+Recorded earnings are not repriced. These are business rules for the next rollout,
+not functionality implemented by this advisory check. Active-version history,
+immutable ledger provenance, mobile rate cache/sync, controlled delivery and full
+release gates remain open. Activation must recheck inside its locked transaction.
+No migration, native test, real factory decision or external message is claimed.
+Preview: 4173 against acceptance API 8001. No GitHub backup or 100-percent
+production readiness is claimed; the public-remote restriction remains unresolved.
+Local backend commit: `e4dac1a`; local admin commit: `f38d109`.
