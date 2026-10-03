@@ -8,6 +8,13 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Factory-confirmed earnings](steps/2026-10-03-factory-earnings.md) records the
+server integration of execution-time prices, immutable earning evidence and
+manual-override protection. Final selected backend regression: 516 unique PASS;
+migration/rollback/history guards and runtime readiness PASS. Acceptance business
+data is unchanged. Activation remains unavailable pending mobile cache/sync and
+rollout checks. This is not full release approval; backups remain local only.
+
 [Journal PDF languages and pagination](steps/2026-09-21-journal-pdf-locales.md)
 records the RU/EN/HE document language, migration 0061, draft selector and mobile
 preparation. Focused checks: backend 88, admin 27 and mobile 83 PASS; changed-file
@@ -536,3 +543,30 @@ No external message, real factory decision or complete release GO is claimed.
 Local commits only; no GitHub backup while the public-remote restriction remains.
 Local backend commit: `52f31e0`. Admin remains at `f38d109` with its existing
 config edits; mobile remains at `f5eaeae`.
+
+## Factory Earnings Integration, October 3
+
+The [earning checkpoint](steps/2026-10-03-factory-earnings.md) connects all door
+and additional-work completion paths to the internal effective-price timeline.
+Migration 0066 preserves original price/item/receipt/time evidence separately
+from existing financial rows. Replays never reprice, reversals offset the exact
+original, and arbitrary manual rates/installer surcharges cannot override a
+factory price after activation. Project-plan edits cannot backfill old uploaded
+unpaid work. Only explicitly classified old offline commands use the first
+confirmed list; missing prices/times retain unresolved commands, not false earnings.
+
+Final selected PostgreSQL regression: 444 main + 72 supplemental = 516 unique
+PASS, including 35 new earning cases. Fresh/rollback/metadata/legacy-data and
+both evidence/time-loss downgrade guards PASS in the subsequently removed QA DB.
+Both isolated schemas are at 0066; all five business checksums remain unchanged,
+and the current acceptance company has zero factory prices/approvals/activations.
+API 8001 is healthy/ready, financial APIs return unauthenticated 401, and live
+OpenAPI contains evidence but no activation route. Preview 4173 returns 200.
+
+Mobile price cache/outbox/version evidence, explicit conflict handling, reviewed
+admin activation and full native/release/deployment checks remain open. Normal
+API 8000, admin/mobile source, existing config edits and current financial data
+were not changed. No external message, native build or production approval is
+claimed. Only local Git checkpoints are allowed while the public-remote
+publication restriction remains unresolved.
+Local backend commit for this step: `cd9d611`.
