@@ -8,6 +8,19 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile price sync](steps/2026-10-03-mobile-price-sync.md) records the additive
+installer price snapshot, account-owned cache and immutable offline price-version
+references. Selected backend regression: 190 PASS; full mobile tests: 723 PASS
+(49 files), TypeScript/config/discovery PASS. Cold reset/retries preserve
+queued evidence; price conflicts do not create earnings. Mobile transport now
+separates local undo metadata from commands, and batch replay cannot rewrite the
+original work. Price-card UI, authorized resolution, reviewed activation and
+physical-device/full-release acceptance remain open. See the checkpoint for
+final verification: API ready/healthy, contract present, anonymous sync 401,
+acceptance business checksums unchanged and no leftover test container. Local
+implementation commits are `0e85956` (backend) and `ef4e839` (mobile). This does
+not grant production approval; activation and remote publication remain blocked.
+
 [Factory-confirmed earnings](steps/2026-10-03-factory-earnings.md) records the
 server integration of execution-time prices, immutable earning evidence and
 manual-override protection. Final selected backend regression: 516 unique PASS;
