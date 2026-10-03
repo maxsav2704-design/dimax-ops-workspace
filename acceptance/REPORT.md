@@ -448,3 +448,27 @@ mobile sync and release gates. Auth-event resets can discard unsaved forms;
 side-by-side comparison is still pending. No native test, real factory approval,
 GitHub backup or full production PASS is claimed.
 Local admin commit: `41ac9ee`; backend checklist-only commit: `19156d5`.
+
+## Legacy Price Reconciliation, October 3
+
+The [reconciliation checkpoint](steps/2026-10-03-price-reconciliation.md) adds
+readonly company inventory before a draft and comparison against one version.
+It distinguishes operative rates from defaults/future prices, identifies
+different prices for one work type, snapshots/surcharges, missing prices/parents,
+changed catalog units and saved add-on work without accrual. RU/EN/HE admin
+filters, pagination, retry and account-change isolation are available.
+
+Final selected regression: 199 backend and 57 frontend tests PASS. Changed-file
+lint, final production build/TypeScript and 7 mocked browser cases PASS; screenshots
+were inspected and owned outputs removed. Live API readiness, route presence and
+unauthenticated 401 were checked. READ ONLY inspection of Acceptance A returned
+9 legacy sources; the factory-price tables remain empty. All five historical
+business-table checksums match the starting checkpoint at migration 0064.
+
+This completes the inspection tool, not the commercial settlement or activation
+of a confirmed price list. Historical earnings were not changed. Confirmed-rate
+activation, mobile/offline rollout, controlled factory delivery and full release
+gates remain open. Mobile was unchanged; no native test or external message was
+performed. Local preview: 4173 against isolated API 8001. No GitHub backup or
+100-percent production readiness is claimed.
+Local backend commit: `d3fdad7`; local admin commit: `e4a0119`.
