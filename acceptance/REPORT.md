@@ -8,6 +8,16 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Mobile price cards](steps/2026-10-03-mobile-price-cards.md) adds read-only rates,
+quantity estimates distinct from earnings, missing-price states, queue links and
+saved execution evidence. Project/cache reads share an account guard. Mobile
+tests: 767 PASS / 50 files; TypeScript, discovery and config checks PASS.
+Isolated browser checks cover RU/EN/HE, 320/391/480 CSS-pixel widths, completed
+work, missing prices and conflicts. A narrow addon-input overflow was corrected.
+No real prices were approved/activated and no business data was changed. Native
+phone acceptance, authorized conflict review, activation and full release gates
+remain open. This is not production approval or a GitHub backup.
+
 [Mobile price sync](steps/2026-10-03-mobile-price-sync.md) records the additive
 installer price snapshot, account-owned cache and immutable offline price-version
 references. Selected backend regression: 190 PASS; full mobile tests: 723 PASS

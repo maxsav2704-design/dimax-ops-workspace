@@ -59,7 +59,8 @@ Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-03-price-application-check.md` and
 `acceptance/steps/2026-10-03-price-timeline.md` and
 `acceptance/steps/2026-10-03-factory-earnings.md` and
-`acceptance/steps/2026-10-03-mobile-price-sync.md`; this section defines the
+`acceptance/steps/2026-10-03-mobile-price-sync.md` and
+`acceptance/steps/2026-10-03-mobile-price-cards.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
