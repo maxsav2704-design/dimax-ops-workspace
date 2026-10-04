@@ -8,6 +8,14 @@ weights remain frozen in `criteria.json`; no untested workflow is marked PASS.
 
 ## Latest Checkpoint
 
+[Price conflict review](steps/2026-10-04-price-conflict-review.md) adds a protected
+read-only execution-time comparison for both retained sync queues, a price-only
+filter and an admin review dialog. No automatic retry, price override or earning
+mutation is available. Selected coverage: 27 backend and 75 frontend checks PASS;
+production admin build PASS, local API ready and admin 4173 updated. Interrupted
+broader regression is not PASS. Authorized resolution, activation, native-device
+and full release acceptance remain open; backups remain local only.
+
 [Mobile price cards](steps/2026-10-03-mobile-price-cards.md) adds read-only rates,
 quantity estimates distinct from earnings, missing-price states, queue links and
 saved execution evidence. Project/cache reads share an account guard. Mobile
