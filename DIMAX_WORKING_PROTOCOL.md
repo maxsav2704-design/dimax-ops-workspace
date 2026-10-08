@@ -62,7 +62,8 @@ Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-03-mobile-price-sync.md` and
 `acceptance/steps/2026-10-03-mobile-price-cards.md` and
 `acceptance/steps/2026-10-04-price-conflict-review.md` and
-`acceptance/steps/2026-10-04-price-conflict-resolution.md`; this section defines the
+`acceptance/steps/2026-10-04-price-conflict-resolution.md` and
+`acceptance/steps/2026-10-04-price-write-boundary.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
