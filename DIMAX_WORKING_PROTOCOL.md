@@ -64,7 +64,8 @@ Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-04-price-conflict-review.md` and
 `acceptance/steps/2026-10-04-price-conflict-resolution.md` and
 `acceptance/steps/2026-10-04-price-write-boundary.md` and
-`acceptance/steps/2026-10-08-addon-price-boundary.md`; this section defines the
+`acceptance/steps/2026-10-08-addon-price-boundary.md` and
+`acceptance/steps/2026-10-08-project-financials.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
