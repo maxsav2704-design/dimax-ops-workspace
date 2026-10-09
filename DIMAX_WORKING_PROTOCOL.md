@@ -69,7 +69,8 @@ Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-08-company-project-margins.md` and
 `acceptance/steps/2026-10-09-installer-financial-matrices.md` and
 `acceptance/steps/2026-10-09-installer-period-kpi.md` and
-`acceptance/steps/2026-10-09-installer-detail-statistics.md`; this section defines the
+`acceptance/steps/2026-10-09-installer-detail-statistics.md` and
+`acceptance/steps/2026-10-09-order-financials.md`; this section defines the
 agreed business rule, not a claim that the full confirmation workflow exists.
 
 ## What We Check In Every Module
