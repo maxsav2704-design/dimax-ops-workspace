@@ -2,6 +2,7 @@ name: dimax_acceptance
 
 x-api: &api
   image: dimax-backend-workspace:local
+  init: true
   mem_limit: 384m
   memswap_limit: 384m
   cpus: 1.0
@@ -11,8 +12,8 @@ x-api: &api
     DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/dimax_acceptance
     JWT_SECRET: acceptance-only-not-a-production-secret-20260909
     PUBLIC_BASE_URL: http://localhost:8001
-    PUBLIC_APP_BASE_URL: http://localhost:4189
-    CORS_ALLOW_ORIGINS: http://localhost:4173,http://127.0.0.1:4173,http://localhost:4189,http://127.0.0.1:4189
+    PUBLIC_APP_BASE_URL: http://localhost:4190
+    CORS_ALLOW_ORIGINS: http://localhost:4173,http://127.0.0.1:4173,http://localhost:4189,http://127.0.0.1:4189,http://localhost:4190,http://127.0.0.1:4190
     MINIO_ENDPOINT: minio:9000
     MINIO_ACCESS_KEY: minioadmin
     MINIO_SECRET_KEY: minioadmin
