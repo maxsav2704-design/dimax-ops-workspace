@@ -1,0 +1,34 @@
+# Opt-in local capture only. Prepare the ignored shared.env before using this file.
+services:
+  api:
+    volumes:
+      - type: bind
+        source: ./acceptance/.factory-mail/shared.env
+        target: /app/.env
+        read_only: true
+        bind:
+          create_host_path: false
+  outbox-worker:
+    restart: unless-stopped
+    stop_grace_period: 60s
+    volumes:
+      - type: bind
+        source: ./acceptance/.factory-mail/shared.env
+        target: /app/.env
+        read_only: true
+        bind:
+          create_host_path: false
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -m, app.workers.outbox_health]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: "2"

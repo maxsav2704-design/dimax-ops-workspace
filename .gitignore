@@ -8,6 +8,7 @@ CLAUDE.md
 artifacts/
 login-preview*.png
 .tmp/
+acceptance/.factory-mail/
 
 # Python caches
 __pycache__/
