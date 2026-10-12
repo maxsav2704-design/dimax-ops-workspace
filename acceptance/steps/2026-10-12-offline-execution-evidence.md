@@ -161,3 +161,11 @@ open. Foreign AI and mobile work was not changed or staged.
   No merge, force push, pull request or deployment was performed.
 - The backend repository automatically starts CI on a source push. A backup
   branch is not proof of a successful CI run or release readiness.
+
+## Follow-up verification
+
+The subsequent October 12 migration step completed the populated 0070/0071
+fixture checks and the evidence downgrade guards, with a green backend quality
+gate. The old local temporary database was removed and its absence verified.
+See `2026-10-12-offline-evidence-migration-acceptance.md` for the results. Actual
+business-data restore, retained-work correction and deployment gates remain open.
