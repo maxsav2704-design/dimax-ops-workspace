@@ -58,6 +58,17 @@
   timezone and independent evidence reference, preview the confirmed factory
   price and recheck under locks before accrual. This never supplies a missing
   factory price or grants installers authority over dates/prices in retained work.
+- Missing-rate exception, explicitly agreed on October 12: an authorized
+  administrator may propose a price for a specific retained, previously
+  performed work that has no rate in its applicable confirmed list. The
+  OWNER-approved factory representative must separately confirm that work,
+  execution date and proposed terms through a personal link before an
+  administrator accrues it. This does not amend the company-wide list, apply a
+  later list retroactively, alter old earnings or give installers price authority.
+  The work remains retained without accrual until that complete workflow exists
+  and its evidence/assignment/idempotency checks pass. Read-only missing-price
+  diagnosis is tracked in `acceptance/steps/2026-10-12-missing-price-evidence.md`;
+  it is not a factory invitation, confirmation or payout.
 
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
