@@ -53,6 +53,11 @@
   review, without automatic earnings or changes to previously earned amounts.
   A factory representative and a construction-site/customer signer are distinct
   roles. Factory price confirmation is separate from journal signatures.
+- Correction of missing/invalid offline time is a separate evidence-backed
+  administrator decision. Keep the original command/time, require an explicit
+  timezone and independent evidence reference, preview the confirmed factory
+  price and recheck under locks before accrual. This never supplies a missing
+  factory price or grants installers authority over dates/prices in retained work.
 
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
