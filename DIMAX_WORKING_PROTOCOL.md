@@ -47,6 +47,10 @@
   has no price in that first list, keep the work for an authorized resolution;
   do not invent a price or silently select a later version.
 - Existing prices must not be labelled factory-confirmed without real evidence.
+  Offline execution dates and cached price IDs are claims, not sufficient proof
+  of entitlement to a historical price. As agreed on October 12, retain work
+  with untrustworthy time or unproven historical entitlement for administrator
+  review, without automatic earnings or changes to previously earned amounts.
   A factory representative and a construction-site/customer signer are distinct
   roles. Factory price confirmation is separate from journal signatures.
 
