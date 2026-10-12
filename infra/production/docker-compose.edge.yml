@@ -1,4 +1,11 @@
 services:
+  api:
+    environment:
+      FORWARDED_ALLOW_IPS: ${DIMAX_PROXY_GATEWAY_IP:-172.30.254.2}
+    networks:
+      default:
+      proxy:
+
   admin:
     image: ${DIMAX_ADMIN_IMAGE:?DIMAX_ADMIN_IMAGE must use an immutable release image}
     init: true
@@ -9,6 +16,8 @@ services:
     restart: unless-stopped
     expose:
       - "5173"
+    networks:
+      - proxy
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/login"]
       interval: 15s
@@ -41,6 +50,9 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+    networks:
+      proxy:
+        ipv4_address: ${DIMAX_PROXY_GATEWAY_IP:-172.30.254.2}
     volumes:
       - ${DIMAX_CADDYFILE:?DIMAX_CADDYFILE is required}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -63,4 +75,11 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+
+networks:
+  default:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${DIMAX_PROXY_SUBNET:-172.30.254.0/29}
 

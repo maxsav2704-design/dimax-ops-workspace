@@ -37,10 +37,33 @@ def valid_config():
     services["admin"] = {"image": "registry.dimax.co.il/admin:git-0123456789ab"}
     services["gateway"] = {"environment": {"DIMAX_API_HOST": "api.dimax.co.il", "DIMAX_ADMIN_HOST": "ops.dimax.co.il",
                                            "DIMAX_TLS_EMAIL": "owner@dimax.co.il"}}
-    return {"name": "dimax-staging", "services": services}
+    services["api"]["environment"]["FORWARDED_ALLOW_IPS"] = "172.30.254.2"
+    services["api"]["networks"] = {"default": {}, "proxy": {}}
+    services["gateway"]["networks"] = {"proxy": {"ipv4_address": "172.30.254.2"}}
+    services["admin"]["networks"] = {"proxy": {}}
+    return {"name": "dimax-staging", "services": services,
+            "networks": {"proxy": {"ipam": {"config": [{"subnet": "172.30.254.0/29"}]}}}}
 
 
 class PreflightTests(unittest.TestCase):
+    def test_proxy_network_rejects_loopback_link_local_and_docker_gateway(self):
+        for subnet, address in (("127.0.0.0/29", "127.0.0.2"), ("169.254.0.0/29", "169.254.0.2"),
+                                ("172.30.254.0/29", "172.30.254.1")):
+            config = valid_config()
+            config["networks"]["proxy"]["ipam"]["config"][0]["subnet"] = subnet
+            config["services"]["gateway"]["networks"]["proxy"]["ipv4_address"] = address
+            config["services"]["api"]["environment"]["FORWARDED_ALLOW_IPS"] = address
+            self.assertTrue(preflight.validate(config))
+
+    def test_proxy_trust_cannot_accept_arbitrary_clients_or_workers(self):
+        for trust in ("*", "127.0.0.1", "172.30.254.0/29", "172.30.254.3"):
+            config = valid_config()
+            config["services"]["api"]["environment"]["FORWARDED_ALLOW_IPS"] = trust
+            self.assertTrue(any("proxy" in error for error in preflight.validate(config)))
+        config = valid_config()
+        config["services"]["outbox-worker"]["networks"] = {"proxy": {}}
+        self.assertTrue(preflight.validate(config))
+
     def test_valid_without_bootstrap_credentials(self):
         self.assertEqual(preflight.validate(valid_config()), [])
 

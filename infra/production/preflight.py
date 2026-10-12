@@ -46,6 +46,22 @@ def validate(config, *, bootstrap=False, inspect_admin_image=False):
         return errors + [f"Required service missing: {name}" for name in missing]
     api = services["api"]
     env = api.get("environment", {})
+    try:
+        proxy = services["gateway"]["networks"]["proxy"]
+        address = ipaddress.ip_address(proxy["ipv4_address"])
+        subnet = ipaddress.ip_network(config["networks"]["proxy"]["ipam"]["config"][0]["subnet"])
+        private_ranges = tuple(ipaddress.ip_network(value) for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
+        if (address.version != 4 or subnet.version != 4
+                or not any(subnet.subnet_of(private) for private in private_ranges) or subnet.prefixlen < 24
+                or address not in subnet or address in (subnet.network_address, subnet.network_address + 1, subnet.broadcast_address)
+                or env.get("FORWARDED_ALLOW_IPS") != str(address)
+                or "proxy" not in api.get("networks", {})
+                or set(services["gateway"]["networks"]) != {"proxy"}
+                or set(services["admin"].get("networks", {})) != {"proxy"}
+                or any("proxy" in services[name].get("networks", {}) for name in BACKEND_SERVICES if name != "api")):
+            raise ValueError()
+    except (KeyError, TypeError, ValueError, IndexError):
+        errors.append("Trusted proxy must be the exact gateway IP on its dedicated private proxy network")
     edge_env = services["gateway"].get("environment", {})
     api_host, admin_host = edge_env.get("DIMAX_API_HOST", ""), edge_env.get("DIMAX_ADMIN_HOST", "")
     for key in ("DIMAX_API_HOST", "DIMAX_ADMIN_HOST"):

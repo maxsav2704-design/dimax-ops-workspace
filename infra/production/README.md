@@ -193,6 +193,20 @@ After deploy, follow `POST_DEPLOY_SMOKE.md`. A successful container start is not
 GO decision until role isolation, door import/assignment, completion, earnings,
 reports, and sync health pass against the production API.
 
+## Trusted Proxy Boundary
+
+The edge overlay pins Caddy to `DIMAX_PROXY_GATEWAY_IP` on a dedicated RFC1918
+`DIMAX_PROXY_SUBNET` (defaults `172.30.254.2`, `172.30.254.0/29`). Choose an unused
+subnet before deployment; check Docker networks and host/VPN routes for overlap.
+Do not use the subnet's first host address, reserved for Docker's gateway.
+Only Caddy's exact address is trusted by Uvicorn `FORWARDED_ALLOW_IPS`, never `*`
+or the whole private range. Admin/Caddy share this network; workers stay off it.
+This keeps distinct client IPs visible to existing per-process rate limits and
+does not replace shared/gateway throttling for a multi-worker production setup.
+
+The gateway denies framing through X-Frame-Options and CSP frame-ancestors,
+and restricts base-uri. This is not a complete script-source/XSS CSP.
+
 ## Current Local Boundary
 
 As of 2026-10-10, the owner confirmed that the domain and SMTP service are not
