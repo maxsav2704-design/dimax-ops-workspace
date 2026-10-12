@@ -17,9 +17,14 @@ $AdminDockerignore = Join-Path $AdminDir ".dockerignore"
 $AdminArtifactDockerfile = Join-Path $AdminDir "Dockerfile.artifact"
 $AdminArtifactDockerignore = Join-Path $AdminDir "Dockerfile.artifact.dockerignore"
 $AdminNextConfig = Join-Path $AdminDir "next.config.mjs"
-$AdminImage = "dimax-admin:infra-contract-000000000000"
-$AdminContainer = "dimax-admin-infra-contract"
-$KeepaliveContainer = "dimax-infra-build-keepalive"
+$ContractId = [Guid]::NewGuid().ToString('N')
+$ContractLabel = "dimax.acceptance.infra=$ContractId"
+$AdminImage = "dimax-admin:infra-contract-$ContractId"
+$AdminContainer = "dimax-admin-infra-contract-$ContractId"
+$KeepaliveContainer = "dimax-infra-build-keepalive-$ContractId"
+$CreatedContainers = [System.Collections.Generic.List[string]]::new()
+$ImageBuildStarted = $false
+$OwnsNextDirectory = $false
 $CaddyImage = "caddy:2.11.4-alpine"
 
 function Invoke-Native {
@@ -66,20 +71,43 @@ function Restore-EnvironmentValue {
 function Remove-ContractDockerResources {
     param([switch]$KeepImage)
 
-    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = "SilentlyContinue"
-        & docker rm -f $AdminContainer 2>$null | Out-Null
-        & docker rm -f $KeepaliveContainer 2>$null | Out-Null
-        if (-not $KeepImage) {
-            & docker image rm $AdminImage 2>$null | Out-Null
+    foreach ($name in @($CreatedContainers)) {
+        $label = & docker inspect --format '{{index .Config.Labels "dimax.acceptance.infra"}}' $name 2>$null
+        if ($LASTEXITCODE -eq 0 -and "$label".Trim() -eq $ContractId) {
+            & docker rm -f $name | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Could not clean owned contract container." }
+            $CreatedContainers.Remove($name) | Out-Null
         }
     }
-    catch {
-        # Cleanup must not mask the original build/runtime failure.
+    if (-not $KeepImage -and $ImageBuildStarted) {
+        $label = & docker image inspect --format '{{index .Config.Labels "dimax.acceptance.infra"}}' $AdminImage 2>$null
+        if ($LASTEXITCODE -eq 0 -and "$label".Trim() -eq $ContractId) {
+            & docker image rm $AdminImage | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Could not clean owned contract image." }
+        }
     }
-    finally {
-        $ErrorActionPreference = $previousErrorActionPreference
+}
+
+function Remove-OwnedNextDirectory {
+    if (-not $OwnsNextDirectory) { return }
+    $target = [IO.Path]::GetFullPath((Join-Path $AdminDir '.next'))
+    $root = [IO.Path]::GetFullPath($WorkspaceRoot).TrimEnd('\', '/')
+    if (-not $target.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Refusing cleanup outside the workspace.'
+    }
+    $cursor = $target
+    while ($cursor) {
+        if (Test-Path -LiteralPath $cursor) {
+            if ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                throw 'Refusing cleanup through a reparse point.'
+            }
+        }
+        $cursor = [IO.Path]::GetDirectoryName($cursor)
+    }
+    if (Test-Path -LiteralPath $target) {
+        $links = @(Get-ChildItem -LiteralPath $target -Recurse -Force | Where-Object { $_.Attributes -band [IO.FileAttributes]::ReparsePoint })
+        if ($links.Count) { throw 'Refusing cleanup containing reparse points.' }
+        Remove-Item -LiteralPath $target -Recurse -Force
     }
 }
 
@@ -107,7 +135,7 @@ foreach ($token in @(
     "node scripts/validate-production-env.mjs",
     "/app/.next/standalone",
     "USER 10001:10001",
-    'CMD ["node", "server.js"]'
+    'CMD ["node", "server.cjs"]'
 )) {
     if (-not $dockerfileText.Contains($token)) {
         throw "Admin production Dockerfile contract is missing: $token"
@@ -118,7 +146,7 @@ $artifactDockerfileText = Get-Content -LiteralPath $AdminArtifactDockerfile -Raw
 foreach ($token in @(
     ".next/standalone",
     "USER 10001:10001",
-    'CMD ["node", "server.js"]'
+    'CMD ["node", "server.cjs"]'
 )) {
     if (-not $artifactDockerfileText.Contains($token)) {
         throw "Admin artifact Dockerfile contract is missing: $token"
@@ -147,7 +175,8 @@ $environmentNames = @(
     "DIMAX_TLS_EMAIL",
     "DIMAX_API_BIND",
     "DIMAX_WEB_CONCURRENCY",
-    "NEXT_PUBLIC_API_BASE_URL"
+    "NEXT_PUBLIC_API_BASE_URL",
+    "NEXT_DIST_DIR"
 )
 $environmentSnapshot = @($environmentNames | ForEach-Object { Save-EnvironmentValue $_ })
 
@@ -172,7 +201,7 @@ try {
 
     $caddyMount = "${CaddyFile}:/etc/caddy/Caddyfile:ro"
     Invoke-Native -Executable "docker" -Arguments @(
-        "run", "--rm",
+        "run", "--rm", "--pull", "never", "--network", "none",
         "-e", "DIMAX_API_HOST=api.dimax.invalid",
         "-e", "DIMAX_ADMIN_HOST=ops.dimax.invalid",
         "-e", "DIMAX_TLS_EMAIL=owner@dimax.invalid",
@@ -182,10 +211,13 @@ try {
     )
 
     if (-not $ConfigOnly) {
-        Remove-ContractDockerResources
+        if (-not $BuildInsideDocker -and (Test-Path -LiteralPath (Join-Path $AdminDir '.next'))) {
+            throw 'Existing .next is preserved. Use -BuildInsideDocker or a separate checkout for the host build.'
+        }
+        $CreatedContainers.Add($KeepaliveContainer)
         Invoke-Native -Executable "docker" -Arguments @(
             "run", "-d",
-            "--name", $KeepaliveContainer,
+            "--name", $KeepaliveContainer, "--label", $ContractLabel,
             $CaddyImage,
             "sleep", "45m"
         )
@@ -195,13 +227,17 @@ try {
             $dockerfileName = "Dockerfile"
         }
         else {
+            $OwnsNextDirectory = $true
+            $env:NEXT_DIST_DIR = '.next'
             Invoke-Native -Executable "npm.cmd" -Arguments @("run", "build") -WorkingDirectory $AdminDir
             $dockerfileName = "Dockerfile.artifact"
         }
 
+        $ImageBuildStarted = $true
         Invoke-Native -Executable "docker" -Arguments @(
             "build",
             "-f", $dockerfileName,
+            "--label", $ContractLabel,
             "--build-arg", "NEXT_PUBLIC_API_BASE_URL=https://api.dimax.invalid",
             "-t", $AdminImage,
             "."
@@ -220,13 +256,14 @@ try {
         Remove-ContractDockerResources -KeepImage
         $runArguments = @(
             "run", "-d",
-            "--name", $AdminContainer,
+            "--name", $AdminContainer, "--label", $ContractLabel,
             "--read-only",
             "--tmpfs", "/tmp",
             "--tmpfs", "/app/.next/cache:uid=10001,gid=10001",
             "-p", "127.0.0.1::5173",
             $AdminImage
         )
+        $CreatedContainers.Add($AdminContainer)
         $containerId = (& docker @runArguments).Trim()
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($containerId)) {
             throw "Admin production image did not start."
@@ -262,18 +299,15 @@ try {
     Write-Host "DIMAX production infrastructure contract passed."
 }
 finally {
-    Remove-ContractDockerResources
-    $adminNextDir = Join-Path $AdminDir ".next"
-    if (Test-Path -LiteralPath $adminNextDir) {
-        Push-Location $AdminDir
-        try {
-            & git clean -fdX -- .next | Out-Null
-        }
-        finally {
-            Pop-Location
+    try {
+        if (-not $ConfigOnly) {
+            Remove-ContractDockerResources
+            Remove-OwnedNextDirectory
         }
     }
-    foreach ($snapshot in $environmentSnapshot) {
-        Restore-EnvironmentValue $snapshot
+    finally {
+        foreach ($snapshot in $environmentSnapshot) {
+            Restore-EnvironmentValue $snapshot
+        }
     }
 }

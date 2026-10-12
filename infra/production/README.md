@@ -62,7 +62,7 @@ but the recommended tier leaves room for OCR, imports, reports, and concurrent s
    enable object versioning through the provider API.
 5. Enable daily Droplet backups and a cloud firewall: public `80/443`, restricted
    `22`, deny all other inbound traffic.
-6. Install Docker Engine and the Compose plugin on the Droplet.
+6. Install Docker Engine, the Compose plugin and Python 3.11+ on the Droplet.
 7. Place the checked-out workspace at `/opt/dimax/app` and production secrets at
    `/opt/dimax/secrets/backend.env` with owner-only permissions.
 8. Build and push backend/admin images tagged with their exact source SHA.
@@ -107,9 +107,42 @@ chmod 600 /opt/dimax/secrets/backend.env
 chmod +x infra/production/deploy.sh
 
 ./infra/production/deploy.sh --check
+DIMAX_RUN_BOOTSTRAP=true ./infra/production/deploy.sh --check  # include owner credentials
 DIMAX_RUN_BOOTSTRAP=true ./infra/production/deploy.sh  # first deploy only
 ./infra/production/deploy.sh                           # later releases
 ```
+
+`--check` renders the effective Compose configuration, including the tools
+profile, and validates it before any pull, migration or service change. It checks:
+
+- a dedicated `dimax-production` / `dimax-staging` project name (optional suffix);
+- HTTPS gateway hosts, API/app URLs and the admin-only CORS origin agree;
+- every backend service passes the existing backend production-env validator;
+- API and workers share the same database, JWT/mail encryption keys, storage,
+  SMTP configuration and release image;
+- release images use a source-SHA tag or digest, workers publish no ports,
+  direct API/admin ports are loopback-only, and the mail worker has its health probe;
+- bootstrap credentials only when `DIMAX_RUN_BOOTSTRAP=true` is explicitly set.
+
+Compose reads `.env` files as data; the deployment script does not execute them
+as shell code. Do not `source` them as an extra deployment step. Rendered secrets
+remain in process memory/stdin and are not printed or written by the script.
+`infra/production/.env.local` is Git-ignored, but backend secrets still belong in
+the owner-only file outside the repository.
+
+On an actual deploy, the same checks run first, followed by image pull and an
+admin image metadata check: its recorded `NEXT_PUBLIC_API_BASE_URL` must match
+the gateway API host, and its runtime user must be `10001:10001`. This guards
+against choosing an image built for localhost; it is not cryptographic proof of
+the bundled JavaScript. Build through the tracked Dockerfiles and use a digest
+for the release. Migrations follow these checks; a failed migration stops the
+script before `up`. Services start with a bounded health wait. Unrelated orphan
+containers are not removed.
+
+Passing `--check` is configuration evidence only: it does not resolve DNS, obtain
+TLS certificates, connect to PostgreSQL/storage, send SMTP mail, prove factory
+mailbox access, or inspect a downloaded admin image. Do not treat it as a release
+GO or weaken validation to make the placeholder examples pass.
 
 Before the first deploy, run from the workspace root:
 
@@ -119,18 +152,56 @@ Before the first deploy, run from the workspace root:
 .\workspace.cmd release-handoff
 ```
 
-The default infrastructure gate builds Next on the host and packages the generated
-standalone runtime into Docker. This avoids Docker Desktop memory failures on the
-4 GiB development machine while still testing the exact non-root runtime image.
+For a local, build-free Compose/Caddy syntax check:
+
+```powershell
+.\scripts\production-infra-contract.ps1 -ConfigOnly
+```
+
+This uses the already cached Caddy image with networking disabled; it never
+cleans `.next`, images or existing containers. It is separate from the semantic
+production preflight above, which intentionally rejects the example coordinates.
+
+The default full infrastructure gate builds Next on the host and packages the
+generated standalone runtime into Docker. It refuses to overwrite an existing
+`.next`; use a separate checkout or the container build below in that case.
+It restores the caller's build environment and only cleans output/resources
+created by that invocation. Docker resources have unique names and ownership
+labels. Both admin Dockerfiles launch the CommonJS standalone entry as
+`server.cjs`, including when the package declares `type: module`.
 CI runners with at least 4 GiB available to Docker should additionally run:
 
 ```powershell
 .\workspace.cmd test-production-infra container
 ```
 
+Regression tests (no real deployment or mail):
+
+```powershell
+node --test scripts/production-infra-contract.test.mjs
+```
+
+```bash
+python3 -B -m unittest discover -s infra/production/tests -v
+```
+
+The Python shell-contract tests require Linux and an executable temporary
+directory. If using a read-only test container, mount `/tmp` with `exec`;
+the fake Docker command is created there. No Docker socket is needed.
+
 After deploy, follow `POST_DEPLOY_SMOKE.md`. A successful container start is not a
 GO decision until role isolation, door import/assignment, completion, earnings,
 reports, and sync health pass against the production API.
+
+## Current Local Boundary
+
+As of 2026-10-10, the owner confirmed that the domain and SMTP service are not
+provisioned. Continue using the isolated local acceptance environment and mail
+capture. Do not send localhost approval links to a real factory representative.
+Before real use, supply the production coordinates/secrets, prove backup restore,
+then verify the public HTTPS invitation, mailbox code, version confirmation and
+separate administrator activation end to end. A local captured email is not
+evidence of external delivery or representative authority.
 
 ## Backup And Recovery
 

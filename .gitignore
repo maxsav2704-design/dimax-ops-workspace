@@ -9,6 +9,7 @@ artifacts/
 login-preview*.png
 .tmp/
 acceptance/.factory-mail/
+infra/production/.env.local
 
 # Python caches
 __pycache__/
