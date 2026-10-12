@@ -55,7 +55,16 @@ import now occurs inside the relevant tests. The second passed the focused
 financial suite and 1112 full integration cases (four skipped), but an existing
 timeline test correctly rejected the extra error metadata. The public error
 contract was restored instead of weakening that assertion. Timeline cases are
-now included in the focused financial gate. Final backend results are pending.
+now included in the focused financial gate.
+
+Final backend CI on `7d9aaa5`: success. Architecture/security: 176 passed;
+focused financial/timeline regressions: 266 passed; complete integration:
+1113 passed, four skipped, 312 warnings, 15 minutes 9 seconds. The 266 are part
+of the 1113, not additional unique tests. API/error contracts, repository
+boundary, fresh/populated migration checks and isolated restore smoke passed.
+These ran on CI Python 3.12 with disposable PostgreSQL. The four skips and
+synthetic browser tests do not prove real mail/storage or device readiness;
+the isolated restore smoke does not close the unsafe shared-target restore risk.
 
 Backend adds ten PostgreSQL integration cases across both queues and work kinds:
 first-confirmed and execution-time missing rates, later-list/retry resistance,
@@ -75,6 +84,8 @@ Final admin CI: https://github.com/maxsav2704-design/dimax-ops-frontend/actions/
 These are source backups, not merges or deployment. Foreign AI/demo/mobile work
 is excluded. No factory invitation, email, WhatsApp message, real earning,
 working database migration or phone installation was performed.
+Remote readback matched the final backend/admin SHAs. The workspace protocol and
+this report are backed up on the same branch in `dimax-ops-workspace`.
 Both owned local screenshot bundles (827014 and 1127548 bytes) were removed after
 visual inspection using resolved-path and reparse-point guards. No temporary
 database, dump, image build or dependency download was created locally by this
