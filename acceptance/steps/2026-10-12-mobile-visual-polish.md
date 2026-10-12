@@ -37,6 +37,15 @@ rule changed; installers still never see a price input. All work is in the
   for work in the displayed floor order (wrapping), via the existing
   `openDoor`; it never closes or submits anything. Full suite 803 PASS (59
   files) after this block.
+- M4b `ef2ac1a`: `app/project/[id].tsx` split (1860 -> 1160 lines) into
+  `DoorExplorer`, `DoorDetailCard`, `FilterChip` and door status helpers under
+  `src/modules/projects/ui/`; state, handlers and tests unchanged.
+- M4c `2cfc957`: the door card opens in a bottom-sheet Modal (backdrop, grip, Android
+  back, accessibility escape, keyboard avoidance). Agreed behaviour changes:
+  the first door is still highlighted on open but no sheet appears; a door
+  link opens the sheet once and never reopens it after closing; "Back to
+  doors" closes the sheet. Four scroll tests became four sheet tests; ten
+  tests open the sheet the way an installer does. Full suite 803 PASS.
 
 ## Evidence
 
@@ -68,6 +77,11 @@ rule changed; installers still never see a price input. All work is in the
 - M7: skeletons on home, plan, earnings, issues, journal and document screens.
 - M8: in Hebrew every chevron points left, trailing numbers align correctly,
   `תכנית` differs from `יומן עבודה`.
+- M4a-c: tapping a door row slides the sheet up; backdrop, grip area, Android
+  back and "Back to doors" close it; the row stays highlighted; a link from
+  Issues or the queue opens the sheet once; after Installed the sheet stays
+  with the result and "Next door" switches to the next open door; the
+  not-installed comment field is not covered by the keyboard.
 
 ## Data, Storage And Limits
 
@@ -78,6 +92,6 @@ only by `preview/main.tsx`). Local commits only; nothing was pushed.
 ## Next Ordered Step
 
 1. Run the device checklist on a physical Android phone; fix anything found.
-2. M4 door walkthrough: split `app/project/[id].tsx` into components without
-   behaviour change, then floor sections, a door sheet and "next door".
-3. M9: have the home sync pill reuse `buildSyncStatusPresentation`.
+2. M9: have the home sync pill reuse `buildSyncStatusPresentation`.
+3. M10: floor sections with sticky progress (virtualised list); touches the
+   outer ScrollView and its tests, so only after the device check.
