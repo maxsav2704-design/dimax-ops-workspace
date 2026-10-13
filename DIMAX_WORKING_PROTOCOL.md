@@ -75,6 +75,13 @@
   independent execution/assignment evidence and an agreement reference. PREPARED
   means neither sent nor factory-approved; it cannot settle the queue or accrue
   earnings. Separate invitation, factory confirmation and accrual remain required.
+- The separate invitation/confirmation implementation is tracked in
+  `acceptance/steps/2026-10-13-work-price-approvals.md`. The admin cannot choose an
+  arbitrary recipient or receive the secret link/code through the admin API.
+  The current OWNER-approved factory contact receives an expiring link and a
+  separately requested mailbox code. Its decision binds the exact proposal and
+  work context. Factory confirmation alone never applies the retained command,
+  acknowledges the mobile queue, activates a price list or creates earnings.
 
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
