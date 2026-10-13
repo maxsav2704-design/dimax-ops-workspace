@@ -82,6 +82,12 @@
   separately requested mailbox code. Its decision binds the exact proposal and
   work context. Factory confirmation alone never applies the retained command,
   acknowledges the mobile queue, activates a price list or creates earnings.
+- The separately authorized accrual implementation is tracked in
+  `acceptance/steps/2026-10-14-work-price-accrual.md`. An administrator reviews the
+  confirmed work, gives a reason and explicit consent, without entering a new
+  price. Work/earning/evidence/audit/queue ACK are atomic; the installer receives
+  the same ledger amount and can clear a resolved pricing block without replaying
+  the work. A valid historical confirmation is not erased by link expiry.
 
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
