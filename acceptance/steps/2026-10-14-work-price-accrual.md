@@ -60,14 +60,15 @@ retains the existing accessible, scrollable review dialog and RTL layout.
 
 ## Verification
 
-- Local frontend: 23 scoped tests passed; scoped ESLint passed. Full CI on the
-  initial UI commit passed 557 tests across 60 files, TypeScript, production
-  build (27 pages), and all 12 Chromium scenarios in EN/RU/HE. A final repeat
-  includes the added quantity/unit row and its assertion.
-- Three accrual screenshots were inspected at 1280 px EN and 390 px RU/HE.
+- Local frontend: 23 scoped tests passed; scoped ESLint passed. Both initial and
+  final CI passed 557 tests across 60 files, ESLint, TypeScript, production build
+  (27 pages), and all 12 Chromium scenarios in EN/RU/HE. The final repeat includes
+  the added quantity/unit row and its assertion.
+- Three final accrual screenshots were inspected at 1280 px EN and 390 px RU/HE.
   No horizontal overflow or overlapping fields was observed; the long dialog
   scrolls. Browser scenarios mock API responses; they are not SMTP or deployed
-  end-to-end evidence.
+  end-to-end evidence. Both owned screenshot downloads were removed after
+  inspection (60 files, 5,463,058 bytes); no unrelated files or caches were removed.
 - Mobile code is unchanged. Five existing suites passed 137 tests covering sync,
   cold resync, account isolation and earnings service/contracts; TypeScript passed.
   The first sandboxed Vitest attempt failed to rename its own temporary files;
@@ -77,7 +78,18 @@ retains the existing accessible, scrollable review dialog and RTL layout.
   legacy/current timelines, duplicate and concurrent submissions, stale work,
   authority, tenant isolation, consent, rollback, immutable history, cancellation,
   downgrade refusal, installer earnings and read-only mobile ACK.
-- Final backend and frontend CI results are pending below. Earlier backend runs
+- Final backend CI passed all eight required jobs: 396 focused financial tests;
+  1,229 full integration tests with four opt-in skips; 176 architecture/security
+  tests; one OpenAPI contract test; 31 error-contract tests; migration
+  upgrade/downgrade/upgrade and historical-evidence guards; isolated backup/restore;
+  repository boundary and final quality gate. Focused scenarios overlap with the
+  full suite; these figures must not be summed as unique tests.
+- The four skipped scenarios require explicitly enabled real Mailpit/MinIO:
+  factory approval email, factory mailbox verification, signed journal PDF
+  delivery, and synced installer work through signed journal delivery. They did
+  not run in this PostgreSQL-only job. Existing dependency/runner warnings remain;
+  a green result is not a claim of zero warnings or complete external acceptance.
+- Earlier backend runs
   exposed an incorrect helper import and test assumptions about preview hashes
   and existing 403/422 contracts; these were corrected without relaxing guards.
   The read-only mobile ACK lookup gap was found during code review and fixed
