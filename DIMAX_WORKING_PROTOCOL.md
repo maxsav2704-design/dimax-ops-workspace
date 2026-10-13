@@ -69,6 +69,12 @@
   and its evidence/assignment/idempotency checks pass. Read-only missing-price
   diagnosis is tracked in `acceptance/steps/2026-10-12-missing-price-evidence.md`;
   it is not a factory invitation, confirmation or payout.
+- The next preparation block is tracked in
+  `acceptance/steps/2026-10-12-work-price-proposals.md`. An authorized administrator
+  can save immutable, versioned terms for one eligible retained work, with
+  independent execution/assignment evidence and an agreement reference. PREPARED
+  means neither sent nor factory-approved; it cannot settle the queue or accrue
+  earnings. Separate invitation, factory confirmation and accrual remain required.
 
 Implementation status and the ordered rollout are tracked in
 `acceptance/steps/2026-10-02-price-authority.md` and the subsequent
