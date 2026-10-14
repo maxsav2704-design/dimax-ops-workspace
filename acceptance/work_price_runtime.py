@@ -29,7 +29,7 @@ from app.modules.installers.infrastructure.models import InstallerORM, Installer
 from app.modules.projects.infrastructure.models import ProjectORM
 from app.modules.reasons.infrastructure.models import ReasonORM
 from app.shared.infrastructure.db.session import SessionLocal
-from app.shared.infrastructure.db import model_registry  # noqa: F401 - register all FK targets
+from app.shared.infrastructure.db.model_registry import import_all_orm_models
 
 
 def seed():
@@ -39,6 +39,7 @@ def seed():
             or settings.SMTP_HOST != "mailpit" or settings.WHATSAPP_ENABLED):
         raise RuntimeError("Only the disposable runtime acceptance environment is permitted")
     password = secrets.token_urlsafe(24)
+    import_all_orm_models()
     with SessionLocal.begin() as db:
         assert db.execute(text("SELECT current_database()")).scalar_one() == url.database
         assert db.query(CompanyORM).count() == 0, "Refusing an existing database"
