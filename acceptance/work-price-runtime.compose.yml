@@ -11,7 +11,8 @@ x-app: &app
     JWT_SECRET: runtime-acceptance-only-not-production-20261014
     FACTORY_APPROVAL_EMAIL_KEY: ${DIMAX_RUNTIME_MAIL_KEY:?Set an ephemeral mail key}
     PUBLIC_BASE_URL: http://127.0.0.1:8002
-    PUBLIC_APP_BASE_URL: http://127.0.0.1:4192
+    # Reserved link text for captured mail only; no external HTTPS claim or DNS use.
+    PUBLIC_APP_BASE_URL: https://dimax-runtime.example.test
     CORS_ALLOW_ORIGINS: http://127.0.0.1:4192
     MINIO_ENDPOINT: minio:9000
     MINIO_ACCESS_KEY: minioadmin

@@ -204,6 +204,7 @@ def main():
         assert request(admin, "GET", "/admin/price-lists/state")["active_price"]["price_list_id"] == price["id"]
         assert len(request(admin, "GET", f'/admin/price-lists/{price["id"]}')["items"]) == 1
         proof = {"status": "PASS", "transport": "real HTTP and SMTP; deployed worker; no mocks",
+                 "external_https_verified": False, "physical_phone_verified": False,
                  "work": proofs, "ledger_rows_after_reversal": 3, "net_after_reversal": "13.52"}
         Path("/proof/result.json").write_text(json.dumps(proof, indent=2), encoding="utf-8")
         session_file = Path("/proof/private-session.json")
