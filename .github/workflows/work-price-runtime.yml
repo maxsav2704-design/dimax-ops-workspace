@@ -55,7 +55,7 @@ jobs:
           node --check acceptance/work-price-runtime-browser.mjs
       - name: Build API and start private dependencies
         run: |
-          docker compose build api
+          docker compose build api minio
           docker compose up -d --wait db minio mailpit
           docker compose run --rm --no-deps api alembic upgrade head
           docker compose up -d --wait --wait-timeout 180 api
