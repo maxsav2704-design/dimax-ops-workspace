@@ -1,0 +1,102 @@
+name: Work Price Deployed Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/work-price-runtime-*']
+    paths:
+      - 'acceptance/work_price_runtime.py'
+      - 'acceptance/work-price-runtime*'
+      - '.github/workflows/work-price-runtime.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: work-price-runtime-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deployed-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: dimax-work-price-${{ github.run_id }}-${{ github.run_attempt }}
+      COMPOSE_FILE: acceptance/work-price-runtime.compose.yml
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8002
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout verified backend
+        uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-backend
+          ref: 159564c1157c89ce1baeb4c54cad0f5f7aefcf5f
+          path: backend
+          persist-credentials: false
+      - name: Checkout verified admin
+        uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-frontend
+          ref: 3903abeef79b0c8d84df6df945c5dfc6ee1ef8c4
+          path: dimax-operations-suite-main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Prepare isolated runtime
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          echo "DIMAX_RUNTIME_MAIL_KEY=$key" >> "$GITHUB_ENV"
+          echo "DIMAX_RUNTIME_OUTPUT=$GITHUB_WORKSPACE/runtime-private" >> "$GITHUB_ENV"
+          mkdir runtime-private
+          sudo chown 10001:10001 runtime-private
+          python -c "import ast,pathlib; ast.parse(pathlib.Path('acceptance/work_price_runtime.py').read_text())"
+          node --check acceptance/work-price-runtime-browser.mjs
+      - name: Build API and start private dependencies
+        run: |
+          docker compose build api
+          docker compose up -d --wait db minio mailpit
+          docker compose run --rm --no-deps api alembic upgrade head
+          docker compose up -d --wait --wait-timeout 180 api
+          docker compose up -d worker gateway
+          curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://127.0.0.1:8002/ready
+      - name: Exercise real HTTP SMTP accrual and mobile API chain
+        run: |
+          docker compose run --rm --no-deps check
+          sudo chown -R "$(id -u):$(id -g)" runtime-private
+      - name: Verify isolated backup restore retains financial evidence
+        run: |
+          docker compose exec -T db pg_dump -U postgres -Fc dimax_work_price_runtime_tests > "$RUNNER_TEMP/work-price.dump"
+          docker compose exec -T db createdb -U postgres dimax_work_price_restore_tests
+          docker compose exec -T db pg_restore -U postgres -d dimax_work_price_restore_tests < "$RUNNER_TEMP/work-price.dump"
+          result=$(docker compose exec -T db psql -U postgres -d dimax_work_price_restore_tests -Atc "SELECT (SELECT count(*) FROM completed_work), (SELECT count(*) FROM work_price_accruals)")
+          test "$result" = '3|2'
+          rm "$RUNNER_TEMP/work-price.dump"
+      - name: Build and run real admin
+        working-directory: dimax-operations-suite-main
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+          nohup node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 4192 > "$RUNNER_TEMP/dimax-admin.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4192/login > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Verify real browser and deployed ledger
+        run: node acceptance/work-price-runtime-browser.mjs
+      - name: Upload non-secret evidence only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: work-price-runtime-evidence
+          path: |
+            runtime-private/result.json
+            runtime-private/ledger-desktop.png
+            runtime-private/ledger-narrow.png
+          retention-days: 3
+      - name: Remove only this run's disposable environment
+        if: always()
+        run: docker compose down --volumes --remove-orphans

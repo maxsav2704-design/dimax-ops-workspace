@@ -1,0 +1,98 @@
+# Disposable deployed acceptance. Never merge this into a working Compose project.
+x-app: &app
+  image: dimax-work-price-runtime:acceptance
+  build:
+    context: ../backend
+  init: true
+  mem_limit: 512m
+  environment: &environment
+    APP_ENV: test
+    DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/dimax_work_price_runtime_tests
+    JWT_SECRET: runtime-acceptance-only-not-production-20261014
+    FACTORY_APPROVAL_EMAIL_KEY: ${DIMAX_RUNTIME_MAIL_KEY:?Set an ephemeral mail key}
+    PUBLIC_BASE_URL: http://127.0.0.1:8002
+    PUBLIC_APP_BASE_URL: http://127.0.0.1:4192
+    CORS_ALLOW_ORIGINS: http://127.0.0.1:4192
+    MINIO_ENDPOINT: minio:9000
+    MINIO_ACCESS_KEY: minioadmin
+    MINIO_SECRET_KEY: minioadmin
+    MINIO_BUCKET: runtime-acceptance
+    MINIO_SECURE: "false"
+    EMAIL_ENABLED: "true"
+    SMTP_HOST: mailpit
+    SMTP_PORT: "1025"
+    SMTP_TLS: "false"
+    SMTP_USER: ""
+    SMTP_PASSWORD: ""
+    SMTP_FROM: acceptance@example.test
+    WHATSAPP_ENABLED: "false"
+    WHATSAPP_FALLBACK_TO_EMAIL: "false"
+    TWILIO_ACCOUNT_SID: ""
+    TWILIO_AUTH_TOKEN: ""
+    PLATFORM_API_TOKEN: ""
+    SYNC_ALERT_WEBHOOK_URL: ""
+    PLAN_ALERT_WEBHOOK_URL: ""
+  volumes:
+    - ./empty.env:/app/.env:ro
+  networks: [isolated]
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dimax_work_price_runtime_tests
+    tmpfs: [/var/lib/postgresql/data]
+    networks: [isolated]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d dimax_work_price_runtime_tests"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    tmpfs: [/data]
+    networks: [isolated]
+  mailpit:
+    image: axllent/mailpit:v1.30.3
+    environment:
+      MP_DISABLE_VERSION_CHECK: "true"
+      MP_MAX_MESSAGES: "100"
+    networks: [isolated]
+  api:
+    <<: *app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --max-time, "5", http://127.0.0.1:8000/ready]
+      interval: 5s
+      timeout: 6s
+      retries: 30
+  worker:
+    <<: *app
+    command: python -m app.workers.outbox_worker
+  gateway:
+    image: caddy:2.11.4-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - 127.0.0.1:8002:8000
+      - 127.0.0.1:8027:8025
+    networks: [isolated, ingress]
+  check:
+    <<: *app
+    profiles: [check]
+    command: python /acceptance/work_price_runtime.py
+    volumes:
+      - ./empty.env:/app/.env:ro
+      - ./work_price_runtime.py:/acceptance/work_price_runtime.py:ro
+      - ${DIMAX_RUNTIME_OUTPUT:?Set a disposable output directory}:/proof
+
+networks:
+  isolated:
+    internal: true
+  ingress:
