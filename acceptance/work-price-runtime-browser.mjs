@@ -33,11 +33,13 @@ try {
   assert.ok(ledger.items.every(row => row.work_price && !row.can_correct));
   const visibleProject = page.getByText("Runtime acceptance site", { exact: true }).and(page.locator(":visible")).first();
   await expect(visibleProject).toBeVisible();
-  await page.screenshot({ path: "runtime-private/ledger-desktop.png" });
+  await visibleProject.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "runtime-private/ledger-desktop.png", animations: "disabled" });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(visibleProject).toBeVisible();
+  await visibleProject.scrollIntoViewIfNeeded();
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
-  await page.screenshot({ path: "runtime-private/ledger-narrow.png" });
+  await page.screenshot({ path: "runtime-private/ledger-narrow.png", animations: "disabled" });
   assert.deepEqual(errors, []);
   console.log("PASS: real admin login, deployed ledger, immutable factory evidence, desktop/narrow layout");
 } finally {
