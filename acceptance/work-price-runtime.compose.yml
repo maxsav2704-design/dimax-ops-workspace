@@ -98,6 +98,9 @@ services:
   check:
     <<: *app
     profiles: [check]
+    environment:
+      <<: *environment
+      PYTHONPATH: /app
     command: python /acceptance/work_price_runtime.py
     volumes:
       - ./empty.env:/app/.env:ro
