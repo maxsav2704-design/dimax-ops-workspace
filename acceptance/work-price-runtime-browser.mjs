@@ -6,6 +6,15 @@ import { resolve } from "node:path";
 const require = createRequire(resolve("dimax-operations-suite-main/package.json"));
 const { chromium, expect } = require("@playwright/test");
 const fixture = JSON.parse(await readFile("runtime-private/private-session.json", "utf8"));
+async function settle(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await Promise.all(document.getAnimations()
+      .filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime))
+      .map(animation => animation.finished.catch(() => {})));
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  });
+}
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: "en-US" });
@@ -34,12 +43,14 @@ try {
   const visibleProject = page.getByText("Runtime acceptance site", { exact: true }).and(page.locator(":visible")).first();
   await expect(visibleProject).toBeVisible();
   await visibleProject.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: "runtime-private/ledger-desktop.png", animations: "disabled" });
+  await settle(page);
+  await page.screenshot({ path: "runtime-private/ledger-desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(visibleProject).toBeVisible();
   await visibleProject.scrollIntoViewIfNeeded();
+  await settle(page);
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
-  await page.screenshot({ path: "runtime-private/ledger-narrow.png", animations: "disabled" });
+  await page.screenshot({ path: "runtime-private/ledger-narrow.png" });
   assert.deepEqual(errors, []);
   console.log("PASS: real admin login, deployed ledger, immutable factory evidence, desktop/narrow layout");
 } finally {
