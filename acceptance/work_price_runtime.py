@@ -11,7 +11,7 @@ from decimal import Decimal
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -59,21 +59,30 @@ def seed():
         installer = InstallerORM(company_id=cid, user_id=worker.id, full_name="Runtime Installer", is_active=True)
         project = ProjectORM(company_id=cid, name="Runtime acceptance site", address="Test only", status="OK")
         priced = DoorTypeORM(company_id=cid, code="entrance", name="Priced entrance", is_active=True)
-        unpriced = DoorTypeORM(company_id=cid, code="fire", name="Unpriced fire door", is_active=True)
-        addon = AddonTypeORM(company_id=cid, name="Runtime adjustment", unit="pcs", is_active=True)
         reason = ReasonORM(company_id=cid, code="runtime_cancel", name="Runtime cancellation", is_active=True)
-        db.add_all([installer, project, priced, unpriced, addon, reason])
+        db.add_all([installer, project, priced, reason])
         db.flush()
         db.add(InstallerProfileORM(company_id=cid, user_id=worker.id, installer_id=installer.id,
                                   display_name="Runtime Installer", language="en", is_active=True))
-        door = DoorORM(company_id=cid, project_id=project.id, door_type_id=unpriced.id,
-                       installer_id=installer.id, unit_label="RUNTIME-101", status="IN_PROGRESS",
+        return {"company": str(cid), "password": password, "owner_email": owner.email,
+                "installer_email": worker.email, "project": str(project.id), "installer": str(installer.id),
+                "priced_type": str(priced.id), "reason": str(reason.id)}
+
+
+def seed_new_work(fixture):
+    # New catalog entries appear after activation; incomplete initial lists must remain blocked.
+    with SessionLocal.begin() as db:
+        cid = UUID(fixture["company"])
+        unpriced = DoorTypeORM(company_id=cid, code="fire", name="Unpriced fire door", is_active=True)
+        addon = AddonTypeORM(company_id=cid, name="Runtime adjustment", unit="pcs", is_active=True)
+        db.add_all([unpriced, addon])
+        db.flush()
+        door = DoorORM(company_id=cid, project_id=UUID(fixture["project"]), door_type_id=unpriced.id,
+                       installer_id=UUID(fixture["installer"]), unit_label="RUNTIME-101", status="IN_PROGRESS",
                        version=0, our_price=Decimal("500"), is_locked=False)
         db.add(door)
         db.flush()
-        return {"company": str(cid), "password": password, "owner_email": owner.email,
-                "installer_email": worker.email, "project": str(project.id), "door": str(door.id),
-                "priced_type": str(priced.id), "addon": str(addon.id), "reason": str(reason.id)}
+        fixture.update(door=str(door.id), addon=str(addon.id))
 
 
 API = "http://api:8000/api/v1"
@@ -145,6 +154,7 @@ def main():
         confirm(public, mail, token)
         request(admin, "POST", f'/admin/price-lists/{price["id"]}/activate', {"request_id": str(uuid4()),
             "expected_active_price_list_id": None, "reason": "Reviewed runtime transition", "reviewed_transition": True})
+        seed_new_work(fixture)
         proofs = []
         total = Decimal("0")
         for kind, amount in (("DOOR", "9.01"), ("ADDON", "13.52")):
