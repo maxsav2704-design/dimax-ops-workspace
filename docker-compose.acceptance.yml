@@ -63,7 +63,11 @@ services:
       timeout: 3s
       retries: 20
   minio:
-    image: minio/minio:latest
+    image: dimax-minio:source-9e49d5e
+    pull_policy: build
+    build:
+      context: ./infra/minio
+      target: server
     command: server /data
     environment:
       MINIO_ROOT_USER: minioadmin
