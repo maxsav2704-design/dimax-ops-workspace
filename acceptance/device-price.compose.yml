@@ -1,0 +1,9 @@
+# Local synthetic acceptance only. Mail stays inside Mailpit; this reserved
+# URL is message content, not a claim that public HTTPS is configured.
+services:
+  api:
+    environment:
+      PUBLIC_APP_BASE_URL: https://dimax-device.example.test
+  outbox-worker:
+    environment:
+      PUBLIC_APP_BASE_URL: https://dimax-device.example.test
