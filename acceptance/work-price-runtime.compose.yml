@@ -52,19 +52,11 @@ services:
       timeout: 3s
       retries: 30
   minio:
-    image: dimax-minio-runtime:source-9e49d5e
+    image: dimax-minio:source-9e49d5e
+    pull_policy: build
     build:
-      context: .
-      dockerfile_inline: |
-        FROM golang:1.24.8-bookworm AS builder
-        WORKDIR /src
-        RUN git init && git remote add origin https://github.com/minio/minio.git \
-          && git fetch --depth 1 origin 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a \
-          && git checkout --detach FETCH_HEAD \
-          && CGO_ENABLED=0 go build -trimpath -o /out/minio .
-        FROM debian:bookworm-slim
-        COPY --from=builder /out/minio /usr/local/bin/minio
-        ENTRYPOINT ["/usr/local/bin/minio"]
+      context: ../infra/minio
+      target: server
     command: server /data
     environment:
       MINIO_ROOT_USER: minioadmin

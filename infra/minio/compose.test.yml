@@ -1,0 +1,33 @@
+# Only synthetic data, no host ports or working volumes.
+services:
+  minio:
+    image: dimax-minio:source-9e49d5e
+    build:
+      context: .
+      target: server
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minio-test
+      MINIO_ROOT_PASSWORD: synthetic-test-password
+    volumes:
+      - data:/data
+  client:
+    image: dimax-mc:source-7394ce0
+    build:
+      context: .
+      target: client
+    entrypoint: ["/bin/sh", "-ec"]
+    environment:
+      MC_HOST_local: http://minio-test:synthetic-test-password@minio:9000
+  probe:
+    image: python:3.11-slim-bookworm
+    entrypoint: ["python", "/checks/smoke.py", "--anonymous-probe"]
+    volumes:
+      - ./smoke.py:/checks/smoke.py:ro
+
+volumes:
+  data:
+
+networks:
+  default:
+    internal: true

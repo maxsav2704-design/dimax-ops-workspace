@@ -3,11 +3,13 @@ name: Work Price Deployed Acceptance
 on:
   workflow_dispatch:
   push:
-    branches: ['codex/work-price-runtime-*']
+    branches: ['codex/work-price-runtime-*', 'codex/minio-runtime-*']
     paths:
       - 'acceptance/work_price_runtime.py'
       - 'acceptance/work-price-runtime*'
       - '.github/workflows/work-price-runtime.yml'
+      - 'infra/minio/**'
+      - 'docker-compose.*.yml'
 
 permissions:
   contents: read
@@ -62,6 +64,10 @@ jobs:
           docker compose up -d worker gateway
           # Only this read-only readiness probe may retry a reset during gateway startup.
           curl --fail --max-time 5 --retry 15 --retry-all-errors --retry-delay 2 --retry-max-time 90 http://127.0.0.1:8002/ready
+      - name: Verify shared storage build and persistence
+        run: |
+          python -B -m unittest discover -s infra/minio -p 'test_*.py' -v
+          python -B infra/minio/smoke.py
       - name: Exercise real HTTP SMTP accrual and mobile API chain
         run: |
           docker compose run --rm --no-deps check

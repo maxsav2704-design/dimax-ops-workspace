@@ -45,7 +45,11 @@ services:
       retries: 20
 
   minio:
-    image: minio/minio:latest
+    image: dimax-minio:source-9e49d5e
+    pull_policy: build
+    build:
+      context: ./infra/minio
+      target: server
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -58,7 +62,11 @@ services:
       - workspace_minio_data:/data
 
   minio_init:
-    image: minio/mc:latest
+    image: dimax-mc:source-7394ce0
+    pull_policy: build
+    build:
+      context: ./infra/minio
+      target: client
     depends_on:
       - minio
     entrypoint: >
