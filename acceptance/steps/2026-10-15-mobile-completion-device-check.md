@@ -176,3 +176,22 @@ title; accessibility labels keep the raw text. Confirmed on the device at
 `-32-320dp-sheet-wrapped.png`). Quality gate: 819 tests / 64 files, exit 0.
 The project screen test's text collector now strips the zero-width marker
 so its five existing door-link assertions keep comparing visible text.
+
+**Item 3 (transient "no matching doors" while the project loads): fixed.**
+`DoorExplorer` gained an optional `loading` prop (default false, so other
+callers are unchanged); the project screen passes `localWorkspace === null`.
+While it is true the doors section renders `SkeletonList` (3 rows,
+`testID="project-doors-loading"`) instead of the empty state. Regression
+test: with a deferred local load the skeleton is present, "No matching
+doors" is absent and no door rows exist; after the load resolves the
+skeleton is gone and the row appears. Device: skeleton visible 0.35 s after
+navigation, real rows at 0.9 s
+(`artifacts/screens/phone-2026-10-15-33-project-0.35s-loading.png`,
+`-34-project-0.9s.png`). Quality gate: 820 tests / 64 files, exit 0.
+The header still shows the generic "Объект" title and "0 / 0" during that
+window; left as is (small, and the title needs the same local answer).
+
+**Item 4 (icons blank for seconds after a dev cold start): not a defect** —
+caused by the degraded Metro process described above; gone after the
+restart (icons present in `-30-393dp-fonts-check.png`). Release builds
+bundle the icon font.
