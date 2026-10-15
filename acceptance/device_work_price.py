@@ -114,6 +114,7 @@ def prepare(r, admin, public, mail):
     r.seed_new_work(fixture)
     fixture["stage"] = "AWAITING_PHONE_COMMAND"
     save(fixture)
+    publish_fixture(r, fixture)
     return {"stage": fixture["stage"], "company": fixture["company"], "project": fixture["project"],
             "door": fixture["door"], "work_reference": "RUNTIME-101", "physical_phone_verified": False}
 
@@ -123,6 +124,39 @@ def assert_fixture(r, fixture):
         company = db.get(r.CompanyORM, UUID(fixture["company"]))
         if not company or company.name != COMPANY_NAME:
             raise RuntimeError("Private session does not identify the owned synthetic fixture")
+
+
+def publish_fixture(r, fixture):
+    """Publish seed metadata, not performed work, through the normal sync log."""
+    from app.modules.doors.application.sync_payload import build_door_sync_payload
+    from app.modules.projects.application.sync_payload import build_project_sync_payload
+    from app.modules.sync.domain.enums import SyncChangeType
+    from app.shared.infrastructure.db.uow_sqlalchemy import SqlAlchemyUnitOfWork
+
+    assert_fixture(r, fixture)
+    if fixture["stage"] != "AWAITING_PHONE_COMMAND":
+        raise RuntimeError("Fixture publication is only allowed before the phone work")
+    cid, pid, iid = (UUID(fixture[key]) for key in ("company", "project", "installer"))
+    with SqlAlchemyUnitOfWork() as uow:
+        uow.session.execute(r.text("SELECT id FROM companies WHERE id=:id FOR UPDATE"), {"id": cid})
+        for table in ("completed_work", "sync_events"):
+            count = uow.session.execute(r.text(f"SELECT count(*) FROM {table} WHERE company_id=:id"), {"id": cid}).scalar_one()
+            if count:
+                raise RuntimeError("Refusing fixture publication after work has been submitted")
+        if uow.sync_change_log.max_cursor(company_id=cid):
+            return {"fixture_published": True, "already_present": True}
+        door = uow.doors.get(company_id=cid, door_id=UUID(fixture["door"]), for_update=True)
+        project = uow.projects.get(company_id=cid, project_id=pid)
+        if not door or not project or door.project_id != pid or door.installer_id != iid or door.is_locked:
+            raise RuntimeError("Unexpected synthetic fixture assignment")
+        for kind, entity, payload in (
+            (SyncChangeType.PROJECT_BASE, pid, build_project_sync_payload(project)),
+            (SyncChangeType.DOOR, door.id, build_door_sync_payload(door)),
+        ):
+            uow.sync_change_log.add_change(company_id=cid, change_type=kind, entity_id=entity,
+                                          project_id=pid, installer_id=iid, payload=payload)
+        uow.commit()
+    return {"fixture_published": True, "already_present": False}
 
 
 def review(r, admin, public, mail, fixture):
@@ -183,7 +217,7 @@ def verify(r, admin, fixture):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("stage", choices=["prepare", "review", "accrue", "verify"])
+    parser.add_argument("stage", choices=["prepare", "publish", "review", "accrue", "verify"])
     args = parser.parse_args()
     import work_price_runtime as r
     url = r.make_url(r.settings.DATABASE_URL)
@@ -199,7 +233,8 @@ def main():
             fixture = json.loads(SESSION.read_text(encoding="utf-8"))
             assert_fixture(r, fixture)
             login(r, admin, fixture, "owner")
-            result = (review(r, admin, public, mail, fixture) if args.stage == "review" else
+            result = (publish_fixture(r, fixture) if args.stage == "publish" else
+                      review(r, admin, public, mail, fixture) if args.stage == "review" else
                       accrue(r, admin, fixture) if args.stage == "accrue" else verify(r, admin, fixture))
         print(json.dumps(result))
 
