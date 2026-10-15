@@ -87,3 +87,38 @@ isolated acceptance stack. Test Installer A-1, company DIMAX Acceptance A.
 
 Floor-completion variant of the card and the "next floor" hint (the only
 floor with open A-1 doors is floor 2 with one door); Reduce Motion; iOS.
+
+## Update 13:10 — narrow layout, keyboard, reduced motion
+
+Display emulated at 320 dp (`wm size 880x2400` at density 440), app
+cold-restarted, then `wm size reset`. Screenshots
+`artifacts/screens/phone-2026-10-15-16..23-320dp-*.png`.
+
+Confirmed by test at 320 dp:
+- Home, objects list, project screen, floor map (7 tiles on two rows), door
+  rows, door sheet (details grid collapses to two columns), add-on form and
+  the sync strip all fit without horizontal overflow or clipped controls.
+- Keyboard over a form: focusing the add-on comment field moved it from
+  y 1654 to y 1009, fully visible above the keyboard (`-23-320dp-keyboard.png`).
+  The bottom navigation and the sync strip also rise above the keyboard;
+  they stay usable, so no change proposed.
+
+Observed at 320 dp, cosmetic, NOT changed (fixes need owner approval):
+1. Bottom tab label "Заработок" truncates to "Зарабо…" (tabs are five
+   across 320 dp). Options: smaller tab font at narrow widths or a shorter
+   RU label such as "Доход".
+2. Long unit labels break mid-token: row "B-2-201-dira-E / N-201", sheet
+   title "B-2-201-dira-EN-2 / 01". A smaller title size below ~340 dp or
+   breaking only at hyphens would keep them readable.
+
+Observed, by design: both status buttons of `B-2-201` are disabled while a
+queued event exists for that door (the blocked 2026-10-01 item), so the
+not-installed reason form could not be opened on this project. Duplicate
+earning protection working as specified.
+
+Not verified: Reduce Motion. Animation scales were set to 0 and the app was
+restarted, but the owner started using the phone during the check, so the
+run was aborted; scales restored to 1.0 and display size reset
+(`settings get global *_animation_scale` = 1, `wm size` = physical).
+Captures taken during the owner's use were deleted unviewed in detail and
+are not part of the evidence.
