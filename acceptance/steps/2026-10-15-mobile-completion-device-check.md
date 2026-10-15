@@ -244,3 +244,34 @@ line "работ" fades out instead of a hard crop
 (`artifacts/screens/phone-2026-10-15-38-home-fade-393.png`,
 `-39-home-fade-320.png`). Quality gate: 822 tests / 64 files, exit 0.
 Mobile commit: "feat(nav): soft fade over the scroll edge above the bottom bar".
+
+## Update 16:56 — legacy blocked queue item resolved
+
+Owner asked for the next logical step. Findings first: the retry option
+recommended earlier is not available by design. Blocked events are only
+retryable when the block came from the automatic retry limit
+(`canRetrySyncEvent` / `isAutoRetryLimit`); an assignment conflict is
+terminal, and the server already holds the final answer for that
+client_event_id (`1790880635522-ezs7bt1akt`, DOOR_SET_STATUS, applied
+2026-10-01 18:53 UTC with `CONFLICT_ASSIGNMENT_CHANGED`). Pressing
+"Синхронизировать" on the queue screen at 16:50 confirmed it: the item
+stayed "Заблокировано · Попытки: 1" and the server received no new event.
+This is the duplicate-earning / conflict protection working as specified.
+
+Action taken: the stale item was discarded on the phone through the app's
+own confirmation dialog ("Удалить действие из очереди?"). Local-only
+change; no server data touched. Evidence:
+- queue before: 1 block (`artifacts/screens/phone-2026-10-15-40-queue-before-retry.png`),
+  dialog (`-42-queue-discard-dialog.png`), after: "Очередь пуста", strip
+  "Синхронизировано 16:52" (`-43-queue-after-discard.png`);
+- server after: 0 new sync_events for A-1 since 13:40 UTC, door `B-2-201`
+  still NOT_INSTALLED / A-1, 0 completed_work rows for it;
+- door sheet opened by deep link
+  `dimax-installer://project/<id>?doorId=<B-2-201>`: both status buttons
+  `enabled="true"`, no "1 в очереди" / "Работа требует проверки" notes
+  (`-44-door-b2201-unblocked.png`). The door is ready for a real
+  installation test by the owner.
+
+Observed while doing this: synthetic upward `adb input swipe` drags did not
+scroll the project screen back up (downward drags and taps work), so the
+sheet was reached by deep link instead; finger scrolling is unaffected.
