@@ -216,3 +216,16 @@ script" screen until the mappings are restored. Not an app defect.
 New observation at 320 dp (item 5, not yet changed): on the home screen the
 empty-plan text "Сегодня нет запланированных работ" wraps to two lines and
 the second line is hidden behind the sync strip.
+
+**Item 5 (home empty-plan text cut at 320 dp): not a clipping defect.** The
+home ScrollView ends above the navigation (`bounds` to y 1803 at 393 dp);
+the empty-plan text and the "Мои объекты" button below it sit past that
+edge and are reached by scrolling (`uiautomator` reports the view as
+scrollable; a slow drag moved "План на сегодня" from y 1207 to 550 and
+exposed the button, `artifacts/screens/phone-2026-10-15-37-home-scrolled-393.png`).
+Fast synthetic `adb input swipe` gestures (400-900 ms) did not move this
+tab while the Objects tab scrolled with a 600 ms swipe; a 1.5 s drag did.
+Treated as a synthetic-input artefact, not reproduced with a finger.
+Premium follow-up to consider (not changed): a soft bottom fade on the
+scroll edge above the navigation so cut text reads as "more below"
+instead of a hard crop. Needs a design decision; no change made.
