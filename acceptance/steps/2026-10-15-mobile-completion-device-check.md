@@ -122,3 +122,27 @@ run was aborted; scales restored to 1.0 and display size reset
 (`settings get global *_animation_scale` = 1, `wm size` = physical).
 Captures taken during the owner's use were deleted unviewed in detail and
 are not part of the evidence.
+
+## Update 13:12 — Reduce Motion confirmed
+
+Re-run with the owner's consent: `animator_duration_scale`,
+`transition_animation_scale`, `window_animation_scale` set to 0, app
+force-stopped and restarted, foreground activity verified before every
+capture; all three scales restored to 1 afterwards.
+
+Confirmed by test (`artifacts/screens/phone-2026-10-15-24..27-reduce-motion-*.png`):
+- Home: the progress ring and counters are at their final values (86 %,
+  6/7) in the first capture after the home screen appears and unchanged
+  2 s later; no fill or count-up animation runs.
+- Door sheet: fully rendered 0.4 s after the row tap, no slide-in.
+- No ReactNativeJS error lines in the 800-line logcat window.
+
+Observed, not changed:
+3. Project screen at 0.7 s after navigation (before the local database
+   answers) shows a transient empty state: title "Объект", "0 / 0", "Двери
+   не найдены" with a "Сбросить фильтры" button. A skeleton or a neutral
+   loading row would be less misleading than a "not found" message. Not
+   specific to reduced motion.
+4. In this Metro-served debug session the vector icon font arrives late:
+   header, tab-bar and card icons are blank for the first seconds after a
+   cold start. Release builds bundle the font; not a device finding.
