@@ -2,6 +2,9 @@
 
 ## Status
 
+Follow-up: `2026-10-16-device-work-price-chain.md` records the subsequent physical
+door-chain acceptance. The preparation evidence and handoff below are historical.
+
 PREPARED, NOT a completed physical-device acceptance. No production readiness
 percentage is claimed. The phone has not yet submitted the new test work.
 
