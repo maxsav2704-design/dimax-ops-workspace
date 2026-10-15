@@ -195,3 +195,24 @@ window; left as is (small, and the title needs the same local answer).
 caused by the degraded Metro process described above; gone after the
 restart (icons present in `-30-393dp-fonts-check.png`). Release builds
 bundle the icon font.
+
+## Update 16:15 — item 1 resolved with a compact label
+
+**Item 1 (tab label at 320 dp): fixed** in the mobile repo ("feat(nav):
+compact earnings tab label on screens narrower than 360 dp"). Instead of
+shrinking the font, screens narrower than 360 dp show the compact Russian
+label "Доход" at the unchanged caption size; the accessibility name stays
+"Заработок"; English and Hebrew labels are unchanged. The shared native UI
+test mock now exposes `useWindowDimensions` with a configurable window, and
+the bottom-nav test covers 320 dp (compact), 360 dp (full) and EN/HE.
+Device at 320 dp: all five labels fit on one line, no ellipsis
+(`artifacts/screens/phone-2026-10-15-35-320dp-tabs-compact.png`). Quality
+gate: 821 tests / 64 files, exit 0.
+
+Environment: the phone's USB session dropped the adb reverse mappings a
+third time today; each cold start after that shows the RN "Unable to load
+script" screen until the mappings are restored. Not an app defect.
+
+New observation at 320 dp (item 5, not yet changed): on the home screen the
+empty-plan text "Сегодня нет запланированных работ" wraps to two lines and
+the second line is hidden behind the sync strip.
