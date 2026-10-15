@@ -146,3 +146,33 @@ Observed, not changed:
 4. In this Metro-served debug session the vector icon font arrives late:
    header, tab-bar and card icons are blank for the first seconds after a
    cold start. Release builds bundle the font; not a device finding.
+
+## Update 15:00 — fixes for the 320 dp observations, one by one
+
+Environment note first: the Metro process started in the morning had
+degraded (one font asset took ~10 s; the host had under 300 MiB free RAM),
+so cold starts hit the 8 s font bootstrap timeout and rendered with the
+system fallback font, which overflows at every width. Restarting Metro
+brought asset time to 0.03 s. Captures taken with fallback fonts were
+discarded. This is a development-server effect only; release builds bundle
+the fonts.
+
+**Item 1 (tab label "Заработок" truncates at 320 dp): attempted, reverted,
+needs a wording decision.** `adjustsFontSizeToFit` with a 0.84 floor
+(12 -> 10 px, the agreed minimum) passed the unit test but on the device
+clipped the label to "Заработ" without an ellipsis, i.e. worse than before.
+Geometry: five tabs share (320 - 24 - 14) / 5 ~ 56 dp each, while the bold
+nine-letter word needs ~60 dp even at 10 px. Within the agreed font floor the
+word cannot fit on one line. Options for the owner: a shorter Russian label
+on screens narrower than ~360 dp (for example "Доход"), or allowing 9 px
+for this one label. The change was reverted; nothing committed.
+
+**Item 2 (door labels break mid-token): fixed, mobile commit `ec6e047`.** `breakableUnitLabel` inserts a
+zero-width space after each hyphen or slash for the door row and the sheet
+title; accessibility labels keep the raw text. Confirmed on the device at
+320 dp: rows wrap as "A-1-101-dira- / EN-101", the sheet title
+"B-1-101-dira-EN-101" fits on one line
+(`artifacts/screens/phone-2026-10-15-31-320dp-rows-wrapped.png`,
+`-32-320dp-sheet-wrapped.png`). Quality gate: 819 tests / 64 files, exit 0.
+The project screen test's text collector now strips the zero-width marker
+so its five existing door-link assertions keep comparing visible text.
