@@ -229,3 +229,18 @@ Treated as a synthetic-input artefact, not reproduced with a finger.
 Premium follow-up to consider (not changed): a soft bottom fade on the
 scroll edge above the navigation so cut text reads as "more below"
 instead of a hard crop. Needs a design decision; no change made.
+
+## Update 16:30 — scroll-edge fade (item 5 follow-up) implemented
+
+Owner asked to continue in order, so the premium follow-up was built: the
+bottom navigation now draws a 28 dp, touch-transparent gradient
+(transparent -> background) over the last rows of the screen's scroll view
+(`testID="nav-scroll-fade"`, `pointerEvents="none"`, positioned above the
+bar). No scroll view, padding or clearance changed; every screen that
+renders the bar gets it. Unit test checks position, height, pointer
+transparency and the transparent start colour. Device: at 393 dp the
+empty-plan line near the edge softly dims; at 320 dp the wrapped second
+line "работ" fades out instead of a hard crop
+(`artifacts/screens/phone-2026-10-15-38-home-fade-393.png`,
+`-39-home-fade-320.png`). Quality gate: 822 tests / 64 files, exit 0.
+Mobile commit: "feat(nav): soft fade over the scroll edge above the bottom bar".
