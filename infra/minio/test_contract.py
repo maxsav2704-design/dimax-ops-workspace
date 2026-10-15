@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,6 +13,13 @@ CONFIGS = ("docker-compose.workspace.yml", "docker-compose.workspace.test.yml",
 
 
 class MinioContract(unittest.TestCase):
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory(prefix="dimax-minio-contract-")
+        self.addCleanup(folder.cleanup)
+        self.sandbox = Path(folder.name).resolve()
+        (self.sandbox / "backend").mkdir()
+        (self.sandbox / "backend/.env").touch()
+
     def test_source_builds_and_storage_identity(self):
         expected_volumes = {
             CONFIGS[0]: "workspace_minio_data", CONFIGS[1]: "workspace_test_minio_data",
@@ -22,7 +30,10 @@ class MinioContract(unittest.TestCase):
                "MINIO_SECRET_KEY": "synthetic-password", "MINIO_BUCKET": "dimax"}
         for filename in CONFIGS:
             with self.subTest(config=filename):
-                result = subprocess.run(["docker", "compose", "-f", str(ROOT / filename), "config",
+                project_dir = self.sandbox / "acceptance" if filename.startswith("acceptance/") else self.sandbox
+                project_dir.mkdir(exist_ok=True)
+                result = subprocess.run(["docker", "compose", "--project-directory", str(project_dir),
+                                         "-f", str(ROOT / filename), "config",
                                          "--no-env-resolution", "--format", "json"],
                                         capture_output=True, text=True, env=env, timeout=30)
                 self.assertEqual(result.returncode, 0, result.stderr)
@@ -36,7 +47,7 @@ class MinioContract(unittest.TestCase):
                     service = services[name]
                     self.assertEqual(service["image"], image)
                     self.assertEqual(service["build"]["target"], target)
-                    self.assertEqual(Path(service["build"]["context"]).resolve(), ROOT / "infra/minio")
+                    self.assertEqual(Path(service["build"]["context"]).resolve(), self.sandbox / "infra/minio")
                     self.assertEqual(service["pull_policy"], "build")
                 if filename in expected_volumes:
                     data = next(v for v in services["minio"]["volumes"] if v["target"] == "/data")
