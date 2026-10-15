@@ -137,3 +137,4 @@ Set decision to `NO-GO` if:
 - Policy change (owner-approved 2026-10-15): the release manifest keeps `android.permission.VIBRATE` for `expo-haptics`; `validate-production-config.mjs` enforces this and still removes the storage permissions.
 - Device evidence (2210129SG / a269dc99, Android 15): haptic error pattern recorded by `vibrator_manager` for `com.dimax.operations.installer` at 12:12:00 — see `acceptance/steps/2026-10-15-mobile-haptics-apk-check.md`.
 - Critical checks 1-7 (Waze / WhatsApp handoff) were NOT re-run on this hash; the decision above is unchanged.
+- 2026-10-15 12:49 on the same hash: completion card (E2), next-door walkthrough (M4a) and success haptics confirmed against the acceptance API; server recorded the door INSTALLED with one 250.00 ILS ORIGINAL earning — see `acceptance/steps/2026-10-15-mobile-completion-device-check.md`.
