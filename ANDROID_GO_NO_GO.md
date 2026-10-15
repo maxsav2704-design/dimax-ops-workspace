@@ -129,3 +129,11 @@ Set decision to `NO-GO` if:
 - Use this sheet only after real Android device or emulator verification.
 - If any critical check fails, open a narrow evidence-based fix PR instead of broad refactoring.
 - Run `.\workspace.cmd android-qa-report` after filling `ANDROID_QA_RESULTS.md`.
+
+## 2026-10-15 addendum: haptics APK and VIBRATE policy
+
+- APK: `mobile/android/app/build/outputs/apk/debug/app-debug.apk`, built `2026-10-15 06:01`
+- APK SHA-256: `038CEB091B6A867F0231A5DE52FCD3966CFECECEA09F606E1588BF6A7EEB858C`
+- Policy change (owner-approved 2026-10-15): the release manifest keeps `android.permission.VIBRATE` for `expo-haptics`; `validate-production-config.mjs` enforces this and still removes the storage permissions.
+- Device evidence (2210129SG / a269dc99, Android 15): haptic error pattern recorded by `vibrator_manager` for `com.dimax.operations.installer` at 12:12:00 — see `acceptance/steps/2026-10-15-mobile-haptics-apk-check.md`.
+- Critical checks 1-7 (Waze / WhatsApp handoff) were NOT re-run on this hash; the decision above is unchanged.
