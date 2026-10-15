@@ -25,6 +25,15 @@ account from the owner) with the Next dev server on 127.0.0.1:4173.
 | `47f7be6` | 2.3 issues | 30/38 px hero inside a card replaced by the shared header; KPI grid unframed. |
 | `b682f3e` | 2.3 calendar | Page title added (there was none); month name demoted to h2; `--dmx-event-*` tokens (light + dark) and Tailwind `event` colours; 0 hex literals left in `CalendarScheduleSurface.tsx` (was 179). Journal form title on the page-title class. |
 | `5cc4c0a` | 3 installers | Hand-rolled overlays replaced by `ui/dialog` (role, focus trap, Escape, focus return, localized close); seven form labels paired via `useId`; tests query by label. |
+| `4e2eef5` | B4 currency | Reports "NIS" literals and the ledger's bare amounts now use `COMPANY_CURRENCY` through `formatLocaleMoney`; Reports test expects ILS. |
+| `6db183e` | 5 i18n operations/issues | KPI tiles on both pages localized through `copy()`; `card.label` stays the internal key, `card.title` is displayed; `compactMap` takes a localized fallback; `copy` memoized on locale so the cards memo lists it as a dependency (no lint suppression). |
+| `843c3b0` | 2.4 dashboard loading | KPI tiles show `Skeleton` blocks (status, value, detail) while pending, "Loading" moved to `sr-only`; dispatcher board and next schedule get `CardSkeleton` / `TableSkeleton` so the page does not reflow. Confirmed by the loading test (5 `role=status`, no "—"/"0" in tiles); in the browser the data arrives inside the auth splash window, so the skeletons were not caught on screen. |
+| `755aa24` | 2.4 list states | Issues list, Earnings ledger (mobile + table) and Library (mobile + table) use `TableSkeleton` while loading and `EmptyState` (row variant) when empty; "No issues match…" and "No due date" localized. Dashboard detail lines through `countNoun` ("1 дверь осталась", "1 занят"). Tests for the four pages pass (24). |
+| `5c326a6` | 3 price editor | `window.confirm` on closing a dirty price-list editor replaced by an in-app `AlertDialog` ("Discard unsaved changes?" / Keep editing / Discard changes, RU/HE copy added); regression test covers keep → discard → no POST. |
+| `b4a6130` | 2.4 notices | Library, Documents, Operations: per-page `*NoticeClass` helpers and inline icons replaced by `InlineNotice` (tone icon, `role=alert` for errors). |
+| `5107126` | 2.4 notices | Settings, Earnings ledger (incl. the project-scope warning with its "Show all projects" action), Installers: same migration; the Installers read-only notice for rate viewers localized. |
+| `f837662` | 2.4 notices | Calendar (4 banners + modal error) and Reports (2 errors, success, 3 warnings incl. the two scope warnings with their "Show full report" action) on `InlineNotice`; `reportsNoticeClass` kept only for the accent/muted context panels. Calendar + Reports tests: 37 pass. |
+| `60cd121` | 5 i18n operations | New `src/lib/plural.ts` (`pluralNoun`/`countNoun` on `Intl.PluralRules`, ru one/few/many) with unit test; incident rows, integration cards, filter chips and header summary localized; Russian regression test renders the page inside `LanguageProvider` and asserts "3 инцидента" (few form), chips, cards. |
 
 Full Vitest after `d09a5ab`: 61 + 3 isolated files, 591 tests, exit 0. Later
 items ran their own files plus `tsc`; a full run is due at the end of the pass.
@@ -44,12 +53,18 @@ items ran their own files plus `tsc`; a full run is due at the end of the pass.
 
 ## Observed, not yet changed (queued for later items)
 
-- i18n: Operations status pill "System degraded · 1 incidents" and tile
-  labels ("Sync queue pressure", "fresh", "n/a"), Issues tiles ("SLA
-  BREACHED", "DUE TODAY", "1 P1 in current scope", "within 24h window"),
-  login error "Invalid credentials" all stay English in RU.
-- Money: Reports shows "16 970,00 NIS"; Ledger "Сумма на экране 2 000,00"
-  has no currency; dashboard now says ILS. Item B4 next.
+- i18n (done in `6db183e`, `60cd121`, browser-checked in RU): Operations
+  status pill now "Система деградирует · 1 инцидент", header summary
+  "1 инцидент требует внимания · 1 импорт ожидает сверки", tiles
+  "Риск синхронизации / Нагрузка очереди синхронизации / 100.0% из 3
+  монтажников", "н/д", "свежие"; integrations "WhatsApp / очередь
+  доставки · в норме · очередь доставки чиста", "1 сбойный запуск требует
+  восстановления"; Issues tiles "Нарушен SLA / 1 P1 в текущей области",
+  "Срок сегодня / в окне 24 часов". Still English on those pages: Issues
+  status tabs (Open/New/Triaged…), "No due date", import-row payload text
+  from the API, login error "Invalid credentials" (queued in block 5).
+- Money (done in `4e2eef5`): Reports and Ledger now print ILS through the
+  shared formatter.
 - Dashboard loading is still plain text and dashes; EmptyState/skeletons
   are not yet applied to views.
 - RequireAuth shows the "DIMAX" splash on every route change (audit A8);
