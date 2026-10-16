@@ -104,3 +104,10 @@ Consequences for the admin repo:
 Not done: Group F (`.dark` token block) — optional, left in place. `scripts/validate-production-env.mjs` still validates `VITE_API_BASE_URL` (harmless, listed as owner's call).
 
 Known local artifact: `.next-acceptance/dev/types/validator.ts` (git-ignored, written by a `next dev` run on 2026-09-10) still references `pages/_document`; `tsconfig.json` includes that folder, so a local `tsc`/`next build` reports it until that dev cache is regenerated or removed. A fresh checkout (CI) has no such folder. Removing that cache needs the owner's yes (cache of another task).
+
+Post-cleanup `npm run build`: webpack compiled in 36 s, then the type-check
+phase failed on exactly that stale stub (`.next-acceptance/dev/types/validator.ts:277`,
+`pages/_document.js`). Nothing in `src/` or `app/` is involved; the same build
+passed before group A because the file still existed. Waiting for the owner's
+yes to remove `.next-acceptance/dev/types/` (a 2026-09-10 dev-server cache, no
+container or script reads it), after which the build is expected to pass.
