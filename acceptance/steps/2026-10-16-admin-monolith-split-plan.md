@@ -136,3 +136,22 @@ Step 2 — Projects 1 and 2:
 
 Fixes found on the way, separate commits with tests: `482d5ee` (CSP `frame-src` for the
 OpenStreetMap preview), `91afead` (no map preview while coordinates are empty).
+
+Step 3 — Reports sections 8–15 (one commit each, markup verbatim, same prop pattern):
+
+| Commit | Section | Component | Lines moved |
+|---|---|---|---|
+| `6793270` | 8 failed outbox | `FailedOutboxSection` (retry mutation as prop) | 89 |
+| `4412982` | 9 project risk drilldown | `ProjectRiskDrilldownSection` | 382 |
+| `231aeaa` | 10 installer details | `InstallerDetailsSection` (reads search params itself) | 464 |
+| `06e7888` | 11 operations SLA | `OperationsSlaSection` (metrics/history derived inside) | 242 |
+| `67d9f2f` | 12a installers KPI table | `InstallersKpiTableSection` (id `reports-order-numbers-kpi` kept) | 206 |
+| `6b7bb7f` | 12b order numbers | `OrderNumbersSection` | 287 |
+| `24d9b7e` | 13 delivery risk + scope | `DeliveryRiskSection` (six queries, scopes as props) | 314 |
+| `16483af` | 14a audit catalogs | `AuditCatalogsSection` | 175 |
+| `068021b` | 14b issue audit | `IssueAuditSection` (expanded-row state inside) | 304 |
+| (next) | 15 project plan-fact | `ProjectPlanFactSection` (derivation block moved with it) | 712 + 111 |
+
+`ReportsPage.tsx` after step 3: 2 237 lines (was 9 226): queries, mutations, presets,
+focus handling, the dashboard header and the section calls. 20 files in
+`src/components/reports/`, the largest `ProjectPlanFactSection` at 857 lines.
