@@ -75,8 +75,9 @@ external SMTP and owner-controlled production signing are still separate gates.
   scan guarantee.
 - The packaged bundle SHA-256 matches the verified generated bundle:
   `c840379f214df712b04423a8a3c72752107abbcb14228cc079df476e2eefc4199`.
-  Only one APK is retained in the acceptance output directory; no extra APK
-  copy or public binary upload was made.
+  Only one APK is retained in the acceptance output directory; no extra host
+  copy or public binary upload was made. The device handoff below tracks the
+  temporary copy for normal installation from the phone's Downloads folder.
 - Compiled network XML was inspected inside the APK: cleartext is denied by
   default and allowed only for `127.0.0.1`, without subdomains.
 
@@ -128,11 +129,30 @@ authenticated sync or cached earnings with Metro and the API unavailable.
 - Post-failure checks confirm the acceptance package is absent, the temporary
   APK was removed by the installer, and the original app remains version 0.1.0
   with the unchanged update time `2026-10-15 06:02:21`. Both prior USB reverse
-  mappings (8081 and 8001) were restored. There is no leftover APK on the phone.
+  mappings (8081 and 8001) were restored at that checkpoint. The failed installer
+  left no APK on the phone.
+- The user subsequently confirmed that USB installation is enabled. ADB itself
+  again delayed even read-only package queries; restarting only the host ADB
+  service restored responsive, authorized access with no reverse mappings.
+  The phone was awake and unlocked, with no effective user/device-policy install
+  restriction. A fresh complete transfer still received the same installation
+  cancellation. No permission, verifier or security setting was changed.
+- The Android system buffer identifies the actual gate:
+  `com.miui.securitycenter/com.miui.permcenter.install.AdbInstallActivity`
+  opened at 21:17:24 and closed at 21:17:36 (Asia/Jerusalem, October 16).
+  `PKMSImpl` then reported installation canceled by user. This proves that the
+  confirmation window appeared; it does not establish whether its dismissal
+  was a timeout or a tap. Do not describe the USB-installation toggle as disabled.
+- To avoid repeating that short confirmation window, the same APK was copied
+  once to `/sdcard/Download/DIMAX-Test-standalone-20261016.apk` for normal
+  user-confirmed installation from Files/Downloads. Its device-side SHA-256
+  matches the inspected host APK. This copy intentionally remains pending the
+  user's installation and must be removed afterward. No public binary upload,
+  application storage injection or installer-protection bypass is involved.
 - Installation, cold launch without Metro, normal test sign-in, authenticated
   sync and offline earnings in this exact APK remain pending. The earlier debug
   build's successful financial acceptance is not counted as standalone proof.
-- Next: resolve the normal device installation confirmation, inspect package
+- Next: await normal installation from Downloads, inspect package
   presence, install this APK without replacing the original app, inspect the
   cold-start screen and errors, then use normal sign-in against the isolated API.
   Restore USB mappings and remove only test-owned temporary files after testing.
