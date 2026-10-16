@@ -127,3 +127,12 @@ redone before commit because the identifier rename had touched an i18n key
 (`"reports.installerProfitabilityMatrix"`); the rename now stops at `.` and
 quotes, and the two earlier sections were checked for the same (clean).
 
+Step 2 — Projects 1 and 2:
+
+| Commit | Section | Component | Page lines after |
+|---|---|---|---|
+| `732c328` | 1 project dialog | `ProjectDialog` + `project-form.ts` (form state, address lookup, submit inside; page keeps open/mode, remounts per open, `onCreated`/`onUpdated`) | 12 423 |
+| `75bcc74` | 2 door import wizard | `DoorImportWizard` + `import-types.ts`, `import-copy.ts`, `import-download.ts`, `src/lib/download.ts` (upload state and handlers inside; `importResult`/`analysisReady` stay in the page; history + run details are the card's children until step 3) | 11 737 |
+
+Fixes found on the way, separate commits with tests: `482d5ee` (CSP `frame-src` for the
+OpenStreetMap preview), `91afead` (no map preview while coordinates are empty).
