@@ -181,3 +181,16 @@ closure, page success side effects turned into `onSaved`-style callbacks) in the
 session scratchpad; every run was followed by tsc, eslint and the Projects tests
 (51 + component tests), and the first cut of several cards was redone before commit
 (page helpers the markup still referenced, type narrowing, multi-line anchors).
+
+Step 5 — door workspace: done 2026-10-17 in five commits (`4271ccb`, `7f9124e`, `19d5b11`,
+`85f51fb`, `b0bfd7b`), see `2026-10-16-admin-door-workspace-plan.md`. Final sizes:
+`ProjectsPage.tsx` 3 329 lines (was 13 612), `ReportsPage.tsx` 2 237 (was 9 226). Gate after
+step 5 green (640 tests, build). One regression of the split found in the browser and fixed
+with a test (`2610080`: duplicate React keys of the two remounting dialogs).
+
+## Closing state
+
+The plan is complete. Bundle sizes did not change (the split moves code between modules);
+the next lever, if wanted, is `next/dynamic` per section, which the section files now make a
+one-line change each. Remaining pieces in the two pages are the queries, loaders, deep links,
+headers/lists and the three door API handlers.
