@@ -104,3 +104,9 @@ GET of `http://127.0.0.1:8000/ready` returned status ok and database ready; the 
 confirmed application startup complete. Phone A-1 remains scoped to test API 8001,
 which is stopped to respect the agreed one-stack RAM limit; its offline cache is
 retained. Do not silently repoint that identity at the different ordinary database.
+
+## Addon follow-up
+
+The separately retained addon was subsequently accepted in
+`2026-10-16-device-addon-price-chain.md`. The blocked-addon state above records
+this earlier door checkpoint, not the outcome of the later addon acceptance.
