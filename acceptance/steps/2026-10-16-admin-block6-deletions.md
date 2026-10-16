@@ -91,3 +91,16 @@ Consequences for the admin repo:
   block is optional and listed here as **Group F** (owner's call; it is ~70
   lines of tokens plus the `--dmx-event-*` dark values added in `b682f3e`).
 - `tailwind.config.ts` `darkMode: ["class"]` is harmless and stays.
+
+## Execution (owner's "yes", 2026-10-16)
+
+| Commit | Group | Gate |
+|---|---|---|
+| `9483af3` | B + E (10 files) | tsc, eslint, discovery 68+12, i18n guard, ratchet (baseline regenerated, counts only down) |
+| `02429ec` | C (31 ui primitives + use-mobile, 18 ui files remain) | same gate |
+| `65b0681` | D (27 runtime deps, 64 packages gone, 24 remain) | tsc; dialog / foundation / price lists / installers / calendar tests 49 |
+| `61b70ba` | A (Vite SPA, 8 files, 4 scripts, react-router-dom + vite) | eslint; all node gate scripts; Vitest smoke; tsc clean with the stale `.next-acceptance/dev/types` stub excluded |
+
+Not done: Group F (`.dark` token block) — optional, left in place. `scripts/validate-production-env.mjs` still validates `VITE_API_BASE_URL` (harmless, listed as owner's call).
+
+Known local artifact: `.next-acceptance/dev/types/validator.ts` (git-ignored, written by a `next dev` run on 2026-09-10) still references `pages/_document`; `tsconfig.json` includes that folder, so a local `tsc`/`next build` reports it until that dev cache is regenerated or removed. A fresh checkout (CI) has no such folder. Removing that cache needs the owner's yes (cache of another task).
