@@ -102,6 +102,19 @@ items ran their own files plus `tsc`; a full run is due at the end of the pass.
 - Block 8 decided by the owner: admin stays light, dark theme is the mobile app's; recorded in the same document.
 - Still open from the audit: `/documents` mapping in `admin-access.ts` (other agent's file) and e2e for ledger correction and acceptance signing (need a backend). CSP with nonces closed. Block 5 leftovers closed in `7cafc8a` except 20 non-string locale branches.
 
+## C2 remainder (assessment, 2026-10-16)
+
+Route chunk sizes after the build (`.next/static/chunks/app/(admin)`): projects 316 kB,
+reports 268 kB, operations 144 kB, price-lists 92 kB, journal 76 kB. The weight is the
+page views themselves (ProjectsPage ~13 k lines, ReportsPage ~13 k lines); the on-demand
+dialogs are 6–34 kB of source each, so `next/dynamic` on them would move a few percent
+and was not done. The other `md:hidden` + desktop pairs (about 20) render lists of at
+most a few dozen rows and were left as they are. The reference catalogs (door types,
+installers, reasons, library ≤ 500 rows) are now cached per session by react-query;
+server-side search for the library picker would need an API change. A real reduction
+needs the two monoliths split into route-level sections (import wizard, failed queue,
+door workspace, report groups) — a refactor to plan with the owner, not a minimal fix.
+
 ## Not verified
 Dark mode (not reachable yet), Hebrew pass of the new headers, mobile
 widths of the admin, Lighthouse, full-suite run after the last five
