@@ -1,7 +1,7 @@
 # Admin web — splitting ProjectsPage and ReportsPage into sections (plan)
 
 Date: 2026-10-16. Repo `dimax-operations-suite-main`, branch `codex/release-hardening-20260908`.
-Status: study only; no code changed. Waits for the owner's approval of the order below.
+Status: approved by the owner on 2026-10-16 ("всё устраивает, работаем!"); step 1 in progress, see Progress at the end.
 
 ## Why
 
@@ -102,3 +102,28 @@ browser check on the demo stack, route chunk size noted in the pass log. Full
 No visual or copy changes, no new state management library, no change of API calls
 or query keys, no change to deep links or test ids. Behaviour fixes found on the way
 are separate commits.
+
+## Progress (2026-10-16)
+
+Step 1 — Reports sections 1–7, one commit each, markup moved verbatim:
+
+| Commit | Section | Component | Lines moved |
+|---|---|---|---|
+| `66e6edd` | 1 operations center | `OperationsCenterSection` | 187 |
+| `e9e5d15` | 1b module level | `types.ts` (65 types), `shared.tsx` (helpers + `useReportsText`), `widgets.tsx` (4 widgets) | 1 500 |
+| `ce1b753` | 2 issues analytics | `IssuesAnalyticsSection` | 163 |
+| `d027cb0` | 3 installer profitability matrix | `InstallerProfitabilityMatrixSection` | 473 |
+| `b043f49` | 4 installer cross view | `InstallerCrossViewSection` (sort state + setters as props) | 270 |
+| `efe5c2b` | 5 installers KPI | `InstallersKpiSection` (sort state + setters as props) | 268 |
+| `941bd83` | 6 project margin executive | `ProjectMarginExecutiveSection` (two queries as props) | 293 |
+| `31ec5f2` | 7 issues add-ons impact | `IssuesAddonsImpactSection` (summary rows derived inside) | 375 |
+
+Pattern that settled during the step: a section receives its react-query
+result as `UseQueryResult<T>` and derives its own values; `useReportsText()`
+gives `t`, `tt`, `copy`, `readError`, `optionLabel`, `locale`, so sections do
+not import page helpers. `ReportsPage.tsx` 9 226 → 5 419 lines. Each commit:
+`tsc`, `eslint`, Reports tests (27) green. One extraction attempt (step 4) was
+redone before commit because the identifier rename had touched an i18n key
+(`"reports.installerProfitabilityMatrix"`); the rename now stops at `.` and
+quotes, and the two earlier sections were checked for the same (clean).
+
