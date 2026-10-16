@@ -155,3 +155,29 @@ Step 3 — Reports sections 8–15 (one commit each, markup verbatim, same prop 
 `ReportsPage.tsx` after step 3: 2 237 lines (was 9 226): queries, mutations, presets,
 focus handling, the dashboard header and the section calls. 20 files in
 `src/components/reports/`, the largest `ProjectPlanFactSection` at 857 lines.
+
+Step 4 — Projects 3–10 (one commit each; cards move with their own state and
+handlers, the page keeps queries, selection and cross-section notices):
+
+| Commit | Section | Component | Page lines after |
+|---|---|---|---|
+| `83595f5` | 4 documents | `ProjectDocumentsCard` + `document-shared.ts`; `formatDateTime` → `components/projects/shared.ts` | 11 327 |
+| `96a4ded` | 5 urgency surcharges | `UrgencySurchargesCard` (card + dialog) + `urgency-form.ts` | 10 718 |
+| `54758c6` | 6 additional works | `AdditionalWorksCard` (card + dialog) + `addon-form.ts`, `catalog-types.ts` | 10 124 |
+| `9148433` | 7 financial screen | `ProjectFinancialScreen` (read-only) + `financial-types.ts`; `formatPct`/`riskTone` → shared | 9 358 |
+| `b488e22` | 8a project settings card | `ProjectSettingsCard` (phone-copy timer inside) + `project-types.ts`; `copyTextToClipboard`/`formatReadablePhone` → shared | 8 853 |
+| `135e126` | 8b side widgets | `ProjectSideWidgets`; `initialsFromName`/`issueLabel` → shared | 8 600 |
+| `52a30ac` | 10 bulk reconcile / review | `BulkReconcileCard`, `BulkImportReviewCard` (read-only) | 8 238 |
+| `3645563` | 9 import layout check | `ImportLayoutCheck` + `layout-types.ts` | 8 021 |
+| `1bf6b1e` | 3a import history + run details | `ImportHistoryPanel` (children of the import card) | 7 441 |
+| `654d6e0` | 3b failed import queue | `FailedImportQueueCard` (selection, batch retry inside; paging/filter stay in the page) | 6 915 |
+
+`ProjectsPage.tsx` after step 4: 6 915 lines (was 13 613). What remains is the
+header/portfolio/list, catalogs and notices, the queries and loaders, and the door
+workspace (command bar, matrix + focused door, ledger) with the manual-door dialog —
+the subject of step 5. Tooling: a generic card extractor (block by id/attribute,
+chosen body spans and state, module declarations moved with their dependency
+closure, page success side effects turned into `onSaved`-style callbacks) in the
+session scratchpad; every run was followed by tsc, eslint and the Projects tests
+(51 + component tests), and the first cut of several cards was redone before commit
+(page helpers the markup still referenced, type narrowing, multi-line anchors).
