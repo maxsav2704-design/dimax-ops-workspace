@@ -97,11 +97,11 @@ Follow-up run: [38936323915](https://github.com/maxsav2704-design/dimax-ops-mobi
 
 ## Acceptance boundary
 
-Native build and APK inspection passed. Installation and device cold-start
-results must be recorded below before declaring this block complete. No release keys were
-created, no working app was replaced, and no earnings or installer queue was
-modified by this implementation. Reaching a login screen alone does not prove
-authenticated sync or cached earnings with Metro and the API unavailable.
+Native build, APK inspection, separate installation, unauthenticated cold start
+and the protected-route check passed. Authenticated sync and cached earnings
+with Metro and the API unavailable remain a separate device gate. No production
+release keys were created, no working app was replaced, and no earnings or
+installer queue was modified by this implementation.
 
 ## Device handoff
 
@@ -146,14 +146,48 @@ authenticated sync or cached earnings with Metro and the API unavailable.
 - To avoid repeating that short confirmation window, the same APK was copied
   once to `/sdcard/Download/DIMAX-Test-standalone-20261016.apk` for normal
   user-confirmed installation from Files/Downloads. Its device-side SHA-256
-  matches the inspected host APK. This copy intentionally remains pending the
-  user's installation and must be removed afterward. No public binary upload,
+  matches the inspected host APK. This copy was removed after the installation
+  described below. No public binary upload,
   application storage injection or installer-protection bypass is involved.
-- Installation, cold launch without Metro, normal test sign-in, authenticated
-  sync and offline earnings in this exact APK remain pending. The earlier debug
-  build's successful financial acceptance is not counted as standalone proof.
-- Next: await normal installation from Downloads, inspect package
-  presence, install this APK without replacing the original app, inspect the
-  cold-start screen and errors, then use normal sign-in against the isolated API.
-  Restore USB mappings and remove only test-owned temporary files after testing.
-  No Docker stack or Metro was started in this step.
+
+## Installed device proof
+
+- Android package inspection confirmed successful separate installation at
+  `2026-10-16 21:23:17`, version `0.1.0-acceptance`, versionCode 1, with no
+  DEBUGGABLE flag. The installed `base.apk` SHA-256 equals the inspected host APK.
+- With no ADB reverse mappings and before starting any test containers,
+  force-stopping only DIMAX Test and launching its activity returned `COLD`,
+  Android activity time 933 ms. The actual screen and UI hierarchy showed the
+  normal empty sign-in form, rendered brand fonts and icons, not a Metro error
+  or a blank page. Activity timing is not an end-to-end performance benchmark.
+- A second force-stop followed by the acceptance `://earnings` deep link returned
+  `COLD` (1037 ms). The actual hierarchy again contained SECURE SIGN IN,
+  Company UUID and Sign In. The unauthenticated protected-route check passed.
+- Process-scoped AndroidRuntime/ReactNativeJS/ReactNative/Expo error-log inspection
+  after the first cold launch returned no matching error entries. This is a
+  scoped startup observation, not exhaustive runtime stability certification.
+- Normal UI injection of a Russian-locale tap did not change the screen;
+  the device still requires finger input. No touch-injection security permission
+  was changed and no account/tokens were injected into application storage.
+- Only the existing isolated DB, API and gateway containers were then started.
+  The API needed startup time before `/ready` became healthy. A normal API login
+  with the saved synthetic installer confirmed the expected company and
+  INSTALLER role; its October total remains 18.02 ILS. Credentials and tokens
+  were not logged or bundled. This API check is not mobile sign-in evidence.
+- Only port 8001 was mapped for the pending normal device sign-in; Metro remains
+  stopped and unmapped. The user was asked to sign in to Device price acceptance
+  with the credentials from the existing private local session file.
+- The Downloads APK and all session-owned screenshot/XML files on both the
+  phone and host were removed after verification. Only the original local build
+  output APK is retained. The original installer app still has version 0.1.0
+  and update time `2026-10-15 06:02:21`; its storage was not cleared or manually
+  edited.
+- Final UI inspection still showed the login form, not the test project. The
+  isolated DB/API/gateway and only the 8001 reverse mapping are intentionally
+  left available for the pending user sign-in. No ordinary stack, Metro, mail
+  worker or production service was started. This differs from the initial
+  all-stopped container baseline and must be restored after the device gate.
+- Next: verify authenticated sync and the existing earnings in this exact APK,
+  then cold-start offline, restore original routes/container state, and clean
+  remaining session-owned temporary evidence. Earlier debug-build financial
+  acceptance is not substituted for this remaining standalone check.
