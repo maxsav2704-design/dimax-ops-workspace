@@ -150,7 +150,7 @@ Step 3 — Reports sections 8–15 (one commit each, markup verbatim, same prop 
 | `24d9b7e` | 13 delivery risk + scope | `DeliveryRiskSection` (six queries, scopes as props) | 314 |
 | `16483af` | 14a audit catalogs | `AuditCatalogsSection` | 175 |
 | `068021b` | 14b issue audit | `IssueAuditSection` (expanded-row state inside) | 304 |
-| (next) | 15 project plan-fact | `ProjectPlanFactSection` (derivation block moved with it) | 712 + 111 |
+| `592c6fb` | 15 project plan-fact | `ProjectPlanFactSection` (derivation block moved with it) | 712 + 111 |
 
 `ReportsPage.tsx` after step 3: 2 237 lines (was 9 226): queries, mutations, presets,
 focus handling, the dashboard header and the section calls. 20 files in
