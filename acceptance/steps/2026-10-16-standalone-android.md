@@ -97,11 +97,13 @@ Follow-up run: [38936323915](https://github.com/maxsav2704-design/dimax-ops-mobi
 
 ## Acceptance boundary
 
-Native build, APK inspection, separate installation, unauthenticated cold start
-and the protected-route check passed. Authenticated sync and cached earnings
-with Metro and the API unavailable remain a separate device gate. No production
-release keys were created, no working app was replaced, and no earnings or
-installer queue was modified by this implementation.
+Native build, APK inspection, separate installation, ordinary sign-in, initial
+sync, unauthenticated route protection, authenticated offline cold start and
+earnings refresh after reconnection passed in this exact APK. No production
+release keys were created, no working app was replaced, and no new work or
+earning was created. This is standalone startup/cache acceptance, not a repeat
+of every offline-write/conflict or factory-approval scenario in this APK and not
+production certification.
 
 ## Device handoff
 
@@ -166,28 +168,65 @@ installer queue was modified by this implementation.
 - Process-scoped AndroidRuntime/ReactNativeJS/ReactNative/Expo error-log inspection
   after the first cold launch returned no matching error entries. This is a
   scoped startup observation, not exhaustive runtime stability certification.
-- Normal UI injection of a Russian-locale tap did not change the screen;
-  the device still requires finger input. No touch-injection security permission
-  was changed and no account/tokens were injected into application storage.
+- An initial injected locale tap had no visible effect. Later, after the user's
+  explicit request to sign in on their behalf, ordinary keyboard input and a
+  normal form-button tap worked. No touch-injection security permission was
+  changed and no account/tokens were injected into application storage.
 - Only the existing isolated DB, API and gateway containers were then started.
   The API needed startup time before `/ready` became healthy. A normal API login
   with the saved synthetic installer confirmed the expected company and
-  INSTALLER role; its October total remains 18.02 ILS. Credentials and tokens
-  were not logged or bundled. This API check is not mobile sign-in evidence.
-- Only port 8001 was mapped for the pending normal device sign-in; Metro remains
-  stopped and unmapped. The user was asked to sign in to Device price acceptance
-  with the credentials from the existing private local session file.
+  INSTALLER role; its October total remains 18.02 ILS. No credentials or tokens
+  were bundled or published to GitHub. This preliminary API check is distinct
+  from the subsequent mobile sign-in evidence below.
+
+## Authenticated standalone acceptance
+
+- Only API port 8001 was mapped; Metro remained stopped and unmapped. The user
+  entered the correct company UUID and installer email, but the first login
+  received INVALID_CREDENTIALS. After explicit authorization to complete login,
+  the existing synthetic password was entered into the focused password field
+  through normal keyboard events and the ordinary sign-in button was pressed.
+  There was no password reset, automatic-login build or direct session write.
+- The phone displayed Device Test Installer. Server evidence confirms mobile
+  `/auth/login` returned 200 and the expected installer/company performed sync
+  with zero outgoing events. Initial cursor 0 returned `reset_required=true`,
+  a one-project/one-door snapshot and cursor 83. Later sync used/acknowledged
+  cursor 83 with `reset_required=false`, zero changes and zero failed ACKs.
+- Actual earnings UI displayed 18.02 ILS, two work rows, one project and current
+  data. Removing the only API reverse mapping left no reverse mappings at all.
+  DIMAX Test was force-stopped and cold-started into earnings without Metro/API
+  (Android activity time 889 ms). It retained the signed-in installer and 18.02
+  ILS/two rows, explicitly labelled the result as an offline copy and explained
+  that the last saved calculation was being shown. It did not return to login.
+- Offline navigation to the assigned fixture project displayed RUNTIME-101,
+  one installed door out of one and zero queued actions. The queue screen
+  independently showed zero pending actions, errors and blocks, and an empty
+  queue. No completion, issue, additional-work or pricing action was submitted.
+- Restoring only the 8001 mapping and returning to earnings restored the
+  current-data label and removed the offline-copy label. The same 18.02 ILS and
+  two rows remained. The earnings endpoint returned 200 and incremental sync
+  resumed at cursor 83 without resetting the snapshot or sending work events.
+- A final read-only administrator ledger check confirmed exactly two entries,
+  DOOR and ADDON, each 9.01 ILS, scoped to the expected project and installer.
+  Total remained 18.02 ILS. Scoped error-log inspection of the offline-restarted
+  process returned no AndroidRuntime/ReactNativeJS/ReactNative/Expo errors.
+
+## Restored state and follow-up
+
 - The Downloads APK and all session-owned screenshot/XML files on both the
   phone and host were removed after verification. Only the original local build
   output APK is retained. The original installer app still has version 0.1.0
   and update time `2026-10-15 06:02:21`; its storage was not cleared or manually
-  edited.
-- Final UI inspection still showed the login form, not the test project. The
-  isolated DB/API/gateway and only the 8001 reverse mapping are intentionally
-  left available for the pending user sign-in. No ordinary stack, Metro, mail
-  worker or production service was started. This differs from the initial
-  all-stopped container baseline and must be restored after the device gate.
-- Next: verify authenticated sync and the existing earnings in this exact APK,
-  then cold-start offline, restore original routes/container state, and clean
-  remaining session-owned temporary evidence. Earlier debug-build financial
-  acceptance is not substituted for this remaining standalone check.
+  edited. DIMAX Test remains signed in to its separate synthetic installer;
+  the original app's A-1 account was not replaced or signed out.
+- The three temporary DB/API/gateway containers were stopped after verification,
+  restoring the initial stopped-container baseline. Original reverse mappings
+  for 8081 and 8001 were restored. No volumes, databases or app data were deleted.
+  No ordinary stack, Metro, mail worker or production service was started.
+- Remaining production gates: real domain/HTTPS, external SMTP, owner-controlled
+  signing, and the broader production release matrix. This debug-signed,
+  loopback-only acceptance APK is not a public production build.
+- Follow-up UX finding: an invalid login displayed the raw API JSON error rather
+  than a localized human-readable message. Successful login was verified, but
+  that error presentation remains to be improved; no unrelated UI redesign was
+  folded into this acceptance step.
