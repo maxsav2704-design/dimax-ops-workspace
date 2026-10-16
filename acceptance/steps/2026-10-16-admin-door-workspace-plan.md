@@ -1,7 +1,7 @@
 # Admin web — door workspace split (Projects 11–13), mini-plan
 
 Date: 2026-10-16. Repo `dimax-operations-suite-main`, branch `codex/release-hardening-20260908`.
-Status: study only; no code changed. Waits for the owner's approval.
+Status: approved by the owner on 2026-10-17 ("да"); executed the same day, see Result below.
 Context: steps 1–4 of `2026-10-16-admin-monolith-split-plan.md` are done; `ProjectsPage.tsx`
 is 6 915 lines and the door workspace is what is left of its render.
 
@@ -82,3 +82,22 @@ page size after the five: ~3 000 lines (header, list, queries, loaders, notices)
 No change to door status rules, prices or earnings; no new state library; no change of
 test ids, copy or deep links. Anything found broken on the way is a separate commit with
 its own test, as in steps 1–4.
+
+## Result (2026-10-17)
+
+| Commit | Step | Files | Page lines after |
+|---|---|---|---|
+| `4271ccb` | 1 ManualDoorDialog | `ManualDoorDialog.tsx`, `manual-door-form.ts`; page opens it with an initial form and remounts per open | 6 527 |
+| `7f9124e` | 2 useDoorWorkspace | `door-workspace/useDoorWorkspace.ts` (56 statements, 562 lines, verbatim), `types.ts`, `constants.ts`; `compareNatural` → shared | 5 971 |
+| `19d5b11` | 3 DoorLedger | `door-workspace/DoorLedger.tsx` | 5 624 |
+| `85f51fb` | 4 DoorMatrix | `door-workspace/DoorMatrix.tsx` (ledger as children), `matrix-shared.ts`; API handlers stay in the page as callbacks | 4 144 |
+| `b0bfd7b` | 5 DoorCommandBar | `door-workspace/DoorCommandBar.tsx` (side widgets are laid out inside it and stay there) | 3 329 |
+
+Deviations from the plan: `matrixInstallerFilterControl` stayed a JSX value passed as a
+`ReactNode` prop (used by the matrix and the command bar) instead of becoming a component —
+no behaviour reason to touch it in this step; the "mark installed" test mentioned for step 4
+was not added (the three API handlers did not move, so nothing new to pin). Each commit:
+tsc, eslint, Projects tests 51 + component tests 5 (matrix order filter, bulk assign,
+ledger paging, manual door ×3, focused door reason flow all green).
+`ProjectsPage.tsx` is now 3 329 lines: header/portfolio/list, queries and loaders,
+catalogs and notices, deep links, the three door API handlers and the section calls.
