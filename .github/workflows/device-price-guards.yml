@@ -1,0 +1,26 @@
+name: Device Price Acceptance Guards
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/device-price-*']
+    paths:
+      - 'acceptance/device_work_price.py'
+      - 'acceptance/device_addon_price.py'
+      - 'acceptance/test_device*price.py'
+      - '.github/workflows/device-price-guards.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify acceptance guards without services or credentials
+        run: python -B -m unittest discover -s acceptance -p 'test_device*price.py' -v
