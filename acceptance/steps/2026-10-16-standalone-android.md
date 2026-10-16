@@ -114,11 +114,26 @@ authenticated sync or cached earnings with Metro and the API unavailable.
 - Reconnecting only the ADB USB transport changed its state to `unauthorized`.
   The user was asked to unlock the phone and confirm its normal USB-debugging
   prompt. No device security setting, application storage or account was changed.
+- The user confirmed USB debugging, restoring authorized access. A new
+  non-streaming attempt transferred all 29,564,557 bytes in 0.802 seconds, but
+  Android rejected installation with `INSTALL_FAILED_USER_RESTRICTED: Install
+  canceled by user`. The user was asked whether an installation confirmation
+  appeared; no installer protection or device security setting was bypassed.
+- After the user offered to confirm installation, a retry hit a USB connection
+  reset. ADB recovered with the device authorized; the following attempt again
+  copied the whole APK (0.805 seconds) and received the same user-restricted
+  installation error. Further retries were stopped pending the user's check
+  of Xiaomi's separate USB-installation permission. This is a device gate,
+  not a successful installation or a demonstrated APK runtime defect.
+- Post-failure checks confirm the acceptance package is absent, the temporary
+  APK was removed by the installer, and the original app remains version 0.1.0
+  with the unchanged update time `2026-10-15 06:02:21`. Both prior USB reverse
+  mappings (8081 and 8001) were restored. There is no leftover APK on the phone.
 - Installation, cold launch without Metro, normal test sign-in, authenticated
   sync and offline earnings in this exact APK remain pending. The earlier debug
   build's successful financial acceptance is not counted as standalone proof.
-- Once USB authorization returns: inspect package presence, install this APK
-  without replacing the original app, inspect the cold-start screen and errors,
-  then use normal sign-in against the isolated API. After testing restore the
-  original ADB reverse mappings for 8081 and 8001 and remove only the zero-byte
-  temporary APK if it remains. No Docker stack or Metro was started in this step.
+- Next: resolve the normal device installation confirmation, inspect package
+  presence, install this APK without replacing the original app, inspect the
+  cold-start screen and errors, then use normal sign-in against the isolated API.
+  Restore USB mappings and remove only test-owned temporary files after testing.
+  No Docker stack or Metro was started in this step.
