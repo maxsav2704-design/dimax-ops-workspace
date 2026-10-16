@@ -47,6 +47,8 @@ account from the owner) with the Next dev server on 127.0.0.1:4173.
 | `27408d7` | 4 regression fix | `601ea35` made optional installer fetchers rethrow; the composed installer workspace then rejected as a whole and 6 workspace tests failed (found while running the i18n batches). The aggregate maps optional-panel failures to null; dedicated pages still surface them. Test added. |
 | `43f5d3e` | 5 i18n consolidation | `pickLocale`/`localeCopy` in `lib/locale.ts`, `useCopy()` in `lib/i18n.tsx`; 38 local helpers across 35 files replaced (texts untouched); guard test `scripts/local-copy-helper.test.mjs` in the quality gate (`test:i18n-helpers`); 10 i18n test mocks extended. Tests: 17 files / 157 (components, catalogs, documents, settings, library), 11 files (installer views, calendar, journal, installers, issues), Operations+Ledger+Reports 52, Projects+localization+catalog 59; tsc/eslint/ratchet clean. |
 | `a3d1637` | 7 tests and CI | CI now runs all seven mocked Playwright specs (three added: factory price management, reconciliation, activation; validated locally against the dev server, 10 passed in 5.5 min). `@vitest/coverage-v8` + `npm run test:coverage` (reports in git-ignored `test-results/coverage`; provider proven on two lib files). New tests: NotFound 3, ReasonsPage 2, PriceActionDialog 4, AcceptancePage +2 error paths. `QUALITY_GATE.md` / `TESTING.md` match the real chain. Discovery contract: 70 Vitest + 12 Playwright files. Left: e2e for ledger correction and acceptance signing need a backend (not mocked); `src/test/example.test.ts` placeholder is a deletion for block 6. |
+| `a655239` | 7 hook contract | Full suite surfaced `src/hooks/use-reference-list.test.tsx` (missed in `2b33ff9`): client per test, assertions via `waitFor`, and one contract changed by design — a reload during the initial load joins the in-flight request (dedupe) instead of aborting it; reload after data still cancels the stale refresh (new case). 11 tests. |
+| (closing) | full run + build | `npm run test` (gate batches): 67 + 1 + 1 + 1 files, 555 + 7 + 17 + 50 = 629 tests, exit 0. `npm run build` (webpack): compiled in 55 s, 29 routes, exit 0. Dev server and demo stack stopped afterwards; volumes intact. |
 | `60cd121` | 5 i18n operations | New `src/lib/plural.ts` (`pluralNoun`/`countNoun` on `Intl.PluralRules`, ru one/few/many) with unit test; incident rows, integration cards, filter chips and header summary localized; Russian regression test renders the page inside `LanguageProvider` and asserts "3 инцидента" (few form), chips, cards. |
 
 Full Vitest after `d09a5ab`: 61 + 3 isolated files, 591 tests, exit 0. Later
@@ -87,6 +89,13 @@ items ran their own files plus `tsc`; a full run is due at the end of the pass.
   10-20 s and one `ChunkLoadError` timeout for `app/layout.js`; not an
   app defect. The acceptance stack services I started were stopped
   (outbox-worker left running as found) to free memory; volumes intact.
+
+## Closing state (2026-10-16)
+
+- Full Vitest run green (629 tests) and production build green after the whole series.
+- Block 6 deletions are listed in `2026-10-16-admin-block6-deletions.md` and wait for the owner's "yes" per group.
+- Block 8 decided by the owner: admin stays light, dark theme is the mobile app's; recorded in the same document.
+- Still open from the audit: `/documents` mapping in `admin-access.ts` (other agent's file), CSP with nonces, block 5 leftovers (raw-notice keys, 229 inline locale ternaries), e2e for ledger correction and acceptance signing (need a backend).
 
 ## Not verified
 Dark mode (not reachable yet), Hebrew pass of the new headers, mobile
