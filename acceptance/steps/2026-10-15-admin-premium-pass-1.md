@@ -93,7 +93,7 @@ items ran their own files plus `tsc`; a full run is due at the end of the pass.
 ## Closing state (2026-10-16)
 
 - Full Vitest run green (629 tests) and production build green after the whole series.
-- Block 6 deletions are listed in `2026-10-16-admin-block6-deletions.md` and wait for the owner's "yes" per group.
+- Block 6 executed with the owner's yes (`9483af3`, `02429ec`, `65b0681`, `61b70ba`): 10 + 32 + 8 files and 29 packages removed; stale `.next-acceptance/dev/types` cache removed with a separate yes; tsc and `npm run build` green afterwards. Details in `2026-10-16-admin-block6-deletions.md`.
 - Block 8 decided by the owner: admin stays light, dark theme is the mobile app's; recorded in the same document.
 - Still open from the audit: `/documents` mapping in `admin-access.ts` (other agent's file), CSP with nonces, block 5 leftovers (raw-notice keys, 229 inline locale ternaries), e2e for ledger correction and acceptance signing (need a backend).
 

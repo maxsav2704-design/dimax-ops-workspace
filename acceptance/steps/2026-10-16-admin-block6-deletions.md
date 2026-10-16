@@ -111,3 +111,7 @@ phase failed on exactly that stale stub (`.next-acceptance/dev/types/validator.t
 passed before group A because the file still existed. Waiting for the owner's
 yes to remove `.next-acceptance/dev/types/` (a 2026-09-10 dev-server cache, no
 container or script reads it), after which the build is expected to pass.
+
+Owner approved removing `.next-acceptance/dev/types/` (2026-10-16). Removed;
+`tsc --noEmit -p tsconfig.json` clean; `npm run build` compiled in 25 s,
+29 routes, exit 0. Block 6 closed (groups A–E); group F left in place.
