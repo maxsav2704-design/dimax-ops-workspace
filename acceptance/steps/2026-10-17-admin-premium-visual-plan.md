@@ -274,3 +274,18 @@ The pass over all 15 sections is complete (second half after a Docker restart, w
 | admin (tiles) | Project and catalog KPI cards on threshold tiles; no bar-coloured cards left in the views. |
 
 Still open: sidebar rail tooltips and the mobile drawer (block 9, `AppSidebar.tsx` is the other agent's); the browser pass for Монтажники, Журнал, Справочники, Начисления, Операции, Настройки, Типы дверей, Причины; reports tiering (owner to see in the browser first).
+
+## 14. Block 9 and the second wave of effects (2026-10-17 evening, owner: "take block 9, keep adding complex effects")
+
+| Commit | What |
+|---|---|
+| admin `7a5d96a` | Block 9: mobile navigation drawer (menu button in the topbar, the labelled sidebar in a Radix dialog, slides from the start edge, closes on choice or route change) and rail tooltips below md. Only this session's hunks of `AppSidebar.tsx` were committed; the other agent's two lines (DIMAX AI item) stay in their working tree. Seen in the pane at 375 px. |
+| admin `dc9776f` | Command palette on Ctrl/Cmd+K and the topbar search pill: sections the session can reach, the create action for privileged scopes, projects and installers, one ranked list (prefix > word start > substring > subsequence with spread penalty, ties by kind), keyboard roving, five recents. Seen live ("зав" → Прайс завода). |
+| admin `89f5b9d` | Dispatcher board: proportional building rail per project (installed / in progress / without installer) and an "attention first" toggle on the shared attention level. |
+| admin `899a324` | Numeric KPI values count to their new value (360 ms, off under reduced motion and on first render). |
+| admin (since-visit) | Active projects, open issues and free installers show the delta since the previous visit from a local snapshot of that visit. |
+| admin (g shortcuts) | g then a letter jumps to a section; never while typing. |
+
+Rules kept: motion answers an action or marks a change, never decorates; every colour is a state; the keyboard reaches everything the mouse does (palette, shortcuts, matrix arrows, drawer).
+
+Still open: reports tiering (owner's call after seeing the page), the pre-release visual brand smoke on the production build, and the other agent's `AppSidebar.tsx` lines which remain theirs to commit.
