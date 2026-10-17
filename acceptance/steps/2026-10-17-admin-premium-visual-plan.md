@@ -1,4 +1,4 @@
-# Admin premium visual — study and plan (2026-10-17, awaiting approval)
+# Admin premium visual — study, plan and execution (2026-10-17)
 
 Owner's brief: "take the best design skill from GitHub, draw a premium visual for every
 section of the admin, strict logic, complex logical effects". First run of a new block,
@@ -214,3 +214,28 @@ drawing for the decision, not code of the admin.
 1. Approve the rule system (section 4) and the effects (section 5) as the target.
 2. Neutrals: warm shift (proposed) or keep the current cool grey.
 3. Order of blocks (proposed: foundation → Главная → Проекты → Отчёты → …).
+
+## 11. Execution (2026-10-17, owner approved "do everything as you recommend")
+
+Decisions taken: rule system and effects as the target, warm neutrals, the proposed
+block order. Every block: own commit in the admin repo, tests, `tsc`, eslint and the
+type-scale ratchet green; the other agent's files untouched.
+
+| Commit | Block | What landed |
+|---|---|---|
+| `3e1c078` | 1 foundation | Warm neutral tokens (+ matching shadcn hsl vars). New primitives in `src/components/dimax`: `attention.ts` (E1 level from data, `data-attention` + stripe CSS for tables and rows), `useEntityHighlight` + `entityKey` (E2, delegated document listeners, `.is-linked`), `DimaxPageHeader` `condensedAction` with the sticky 48 px bar after 120 px (E3, `useScrolledPast`), `KpiTile` + `kpi-logic.ts` (E4 tone from thresholds up/down, delta, sparkline geometry, E5 toggle), `FilterChip` (E5), `FreshnessBadge` + `freshness.ts` (E8), `ConfirmActionDialog` (E10, review checkbox gate), `.data-table-compact` (R7). 21 tests. |
+| `9269fd9` | gate | Type-scale baseline rebuilt from the committed tree: the monolith split had moved the Projects/Reports sizes into component files and the ratchet was red on HEAD (36 "new" files). Rule unchanged. |
+| `fcb59c8` | 2 Главная | Five KPI tiles on thresholds (issues warn 1 / problem 5; free installers problem at 0, warn above 85 % load); yellow no longer a status. Issues tile and the board's "doors without installer" / "open issues" items toggle the dispatcher filter with a removable chip (E5). Project rows: attention stripe from blocked / issues / unassigned (E1), entity keys (E2). FreshnessBadge with one refresh for the three queries (E8). Board sizes on the scale. Tests +3. |
+| `3212d55` | 3 Проекты | Arrow keys between door tiles in the preview grid and the full matrix (left/right along the floor, RTL mirrored, up/down keep the position; `matrix-shared.nextMatrixTile` + `moveMatrixFocus`), floor-by-floor fill-in on load, opacity only, off under reduced motion (E7/R8). Ledger on the shared data-table with a sticky header, comfortable/compact density remembered per browser (R7), attention stripe instead of the tinted row (E1), door entity keys. Condensed bar for the selected project (E3). Tests +5 (53 existing green). |
+| `613539c` | 4 Отчёты | The three executive insight cards drew a fixed decorative SVG regardless of the numbers; removed, the card is the shared tile with tone/value/delta/detail/link. 17 section tables on the shared data-table (B7). Installer rows in KPI table, cross view and profitability matrix carry entity keys; the page runs linked highlighting (E2). Library/saved-view cards on one radius and the scale. 27 tests green. |
+| `d020b1d` | 5 Операции | Eight KPI cards → threshold tiles (duplicates/unmatched warn from 1, provider failures warn 1 / problem 5, batch failures problem from 1). Existing freshness, status pill and URL drill-down kept. 17 tests green. |
+| `166b548` | 6 финансы | `ui/table` primitive on the shared baseline (Ledger, Documents, Library, Door types, Reasons at once). Reconciliation deltas coloured by sign, matching rows dimmed (E6). Recorded earnings with the lock glyph and its explanation (R6). 71 tests green (+1). |
+| `7999568` | 7 люди и работа | Issues: four tiles on thresholds, the SLA tile toggles overdue-only (E5), rows with attention stripes (E1). Calendar: lane rows and event avatars carry installer keys, linked highlighting on (E2). Journal headings on the shared role (R2). Installers modals were already on `ui/dialog` (B9 closed earlier). 43 tests green. |
+| `b4cbbe7` | 8 справочники | Settings and the catalog CRUD page on the type scale (31 sizes). 13 tests green. |
+
+Not done, by design or blocked:
+- Block 9 (shell: sidebar rail tooltips, mobile drawer, `next/font`): `AppSidebar.tsx` is still in the other agent's uncommitted tree.
+- Browser verification of every page on the demo stack: the Docker engine is down again (pipe missing); the visual pass with the owner's demo admin runs as soon as it is back, with the visual brand smoke over all routes. Until then the blocks are **confirmed by tests and studied by code, not seen in a browser**.
+- The dashboard sparkline needs a 14-point series the API does not provide yet; the tile supports it, the dashboard passes none.
+- Reports tier tabs (executive / operations / people) were not added: the page already has a focus mechanism (`?focus=`) and the tiering is a content reorder the owner should see in the browser first.
+- Mockup remains the reference: https://claude.ai/artifact/BbxQxHQq9JcXGEdAFCpgkm
