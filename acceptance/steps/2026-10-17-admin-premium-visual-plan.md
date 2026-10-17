@@ -253,11 +253,14 @@ Full-page screenshots in `artifacts/visual-brand/2026-10-17-premium/` (git-ignor
 | Отчёты | yes | Insight cards without the fake charts, stripes by tone, library cards on one radius. |
 | Прайс завода | yes | Header, notice and versions unchanged; demo has no versions, the diff view could not be exercised. |
 | Документы | yes | KPI cards and forms on the shared table baseline. |
-| Монтажники, Журнал, Справочники, Начисления, Операции, Настройки, Типы дверей, Причины | **not seen** | The host ran out of memory three times during the pass (dev server "Array buffer allocation failed", Docker engine hangs); their captures landed on the auth splash or timed out. |
+| Монтажники, Журнал, Документы, Настройки | yes (second pass, 2026-10-17 evening) | Shell and tables fine; **finding**: their KPI cards still carried decorative bar colours (blue, yellow). Fixed centrally in `054c2a6`: the legacy `KpiCard` renders on the shared tile and maps bar colours to state tones. |
+| Начисления | yes | Shared table baseline with the uppercase 11 px header and skeleton rows; the demo has no ledger rows, so the lock glyph was verified by test only. |
+| Операции | yes | Page-specific diagnostic tiles (P1 / OK pills) coherent with the tone system; threshold tiles below the fold. |
+| Справочники, Типы дверей, Причины | yes | Shared table baseline and the catalog tiles. |
 
 Other findings: the one 401 per page in the console is the access-token refresh (`/auth/me` 401 → `/auth/refresh` 200 → retry), not a defect; the demo database was built from the ORM and already had `ix_completed_work_door_id`, so migration 0075 is now idempotent (backend `f4e8f5c`). Backend `installed_series_14d` for the dashboard sparkline added (backend commit, test pending Docker); the frontend tile uses it (`dfbd499`).
 
-Remaining for the browser pass: the eight sections above, then a full-route visual brand smoke. They need a session where only Docker (db + api) and the dev server run; on this 3.9 GB host the pass dies otherwise.
+The pass over all 15 sections is complete (second half after a Docker restart, with only db + api and the dev server running). The full-route visual brand smoke (`npm run test:e2e:visual-brand`) is still to run before a release.
 
 ## 13. Follow-ups landed after the browser pass (2026-10-17)
 
