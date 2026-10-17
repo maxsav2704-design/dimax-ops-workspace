@@ -267,7 +267,8 @@ The pass over all 15 sections is complete (second half after a Docker restart, w
 | Commit | What |
 |---|---|
 | admin `91f244e` | Hidden condensed bar no longer takes layout space (found in the browser). |
-| admin `dfbd499` + backend `d3980cb` | Dashboard sparkline is real: the report returns `installed_series_14d` (effective installations per day), the tile shows it with the week-over-week delta. Backend test assertion added, its run pending Docker. |
+| admin `dfbd499` + backend `d3980cb` | Dashboard sparkline is real: the report returns `installed_series_14d` (effective installations per day), the tile shows it with the week-over-week delta. Backend `test_reports_api.py` 38 passed in the isolated container; seen on the live dashboard (flat at zero on demo data, "±0 к прошлой неделе"). |
+| admin `054c2a6`, `21bfd04` | Legacy KpiCard on the shared tile chrome (Installers, Journal, Documents, Settings lost their decorative bar colours); tile status pill wraps under long labels (seen live). |
 | backend `f4e8f5c` | Migration 0075 idempotent for databases built from the ORM (the demo API restart-looped on it). |
 | admin (fonts) | Block 9, the part outside the other agent's file: Rubik and JetBrains Mono self-hosted through next/font, no Google Fonts @import; production build green. |
 | admin (tiles) | Project and catalog KPI cards on threshold tiles; no bar-coloured cards left in the views. |
