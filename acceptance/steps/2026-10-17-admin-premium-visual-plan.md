@@ -239,3 +239,22 @@ Not done, by design or blocked:
 - The dashboard sparkline needs a 14-point series the API does not provide yet; the tile supports it, the dashboard passes none.
 - Reports tier tabs (executive / operations / people) were not added: the page already has a focus mechanism (`?focus=`) and the tiering is a content reorder the owner should see in the browser first.
 - Mockup remains the reference: https://claude.ai/artifact/BbxQxHQq9JcXGEdAFCpgkm
+
+## 12. Browser pass (2026-10-17, demo stack on 8000, dev server on 4173, demo admin)
+
+Full-page screenshots in `artifacts/visual-brand/2026-10-17-premium/` (git-ignored).
+
+| Section | Seen | Result |
+|---|---|---|
+| Главная | yes (in the browser pane and in DOM) | Tiles with tones from thresholds, freshness "обновлено только что", the "doors without installer" summary item toggles the board and shows the removable chip. |
+| Проекты | yes | Shell intact; **defect found**: the hidden condensed bar reserved 48 px above the project card. Fixed in `91f244e` (zero-height sticky wrapper). Project KPI cards at the top still use the old bar colours (follow-up). |
+| Календарь | yes | Warm canvas, lanes and toolbar unchanged. |
+| Проблемы | yes + DOM | Four tiles, `data-tone` ok at zero values, stripes and chips in the list. |
+| Отчёты | yes | Insight cards without the fake charts, stripes by tone, library cards on one radius. |
+| Прайс завода | yes | Header, notice and versions unchanged; demo has no versions, the diff view could not be exercised. |
+| Документы | yes | KPI cards and forms on the shared table baseline. |
+| Монтажники, Журнал, Справочники, Начисления, Операции, Настройки, Типы дверей, Причины | **not seen** | The host ran out of memory three times during the pass (dev server "Array buffer allocation failed", Docker engine hangs); their captures landed on the auth splash or timed out. |
+
+Other findings: the one 401 per page in the console is the access-token refresh (`/auth/me` 401 → `/auth/refresh` 200 → retry), not a defect; the demo database was built from the ORM and already had `ix_completed_work_door_id`, so migration 0075 is now idempotent (backend `f4e8f5c`). Backend `installed_series_14d` for the dashboard sparkline added (backend commit, test pending Docker); the frontend tile uses it (`dfbd499`).
+
+Remaining for the browser pass: the eight sections above, then a full-route visual brand smoke. They need a session where only Docker (db + api) and the dev server run; on this 3.9 GB host the pass dies otherwise.
