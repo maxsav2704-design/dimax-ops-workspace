@@ -289,3 +289,16 @@ Still open: sidebar rail tooltips and the mobile drawer (block 9, `AppSidebar.ts
 Rules kept: motion answers an action or marks a change, never decorates; every colour is a state; the keyboard reaches everything the mouse does (palette, shortcuts, matrix arrows, drawer).
 
 Still open: reports tiering (owner's call after seeing the page), the pre-release visual brand smoke on the production build, and the other agent's `AppSidebar.tsx` lines which remain theirs to commit.
+
+## 15. Projects section: cards or one line (owner's question, 2026-10-17 night)
+
+Owner: "do the cards in Projects need this visual or is one line more correct?", then with a screenshot of the door tiles: "these cards", and after the first attempt (compact square cells): "in this format the door model is not visible, no info at all", "some kind of mess".
+
+| Commit | What |
+|---|---|
+| admin `03ed3c5` | The five KPI tiles under the project header became one `FactStrip` line (doors installed with a mini rail, days remaining, open issues, revenue, margin; tone dot only where the number is a state). The door workspace moved above the fold. |
+| admin `15bb50c` | Door matrix density **"Строки"**: one door per 32 px line with marking, model (door type), apartment · location and the status pill; state dot at the start, problem stripe on the line, checkbox before the line, column captions above each floor. "Карточки" stays as the second density; the switch sits next to «Матрица / Таблица» in the command bar; projects with 25+ doors open in rows, the choice is remembered per browser; arrow keys and the floor fill-in work in both. |
+
+Rejected on the way: compact square cells (apartment number inside, everything else on hover) — tried, seen on the demo project, and removed the same evening after the owner's feedback: the matrix is a working list, not a heat map; every fact has to be readable without hover.
+
+Checked: FactStrip (2), DoorMatrixTile (+1), door-workspace-navigation (+2), ProjectsPage (53) green; tsc, eslint, type-scale ratchet green; the rows seen in the pane on the demo project (580 doors, 626 rows with the preview grid, 32 px each, captions per floor). Not verified: the rows on a 1440 px screen (the pane is narrower; marking and model truncate with the full text in the title), RTL alignment of the row grid in Hebrew.
