@@ -258,3 +258,15 @@ Full-page screenshots in `artifacts/visual-brand/2026-10-17-premium/` (git-ignor
 Other findings: the one 401 per page in the console is the access-token refresh (`/auth/me` 401 → `/auth/refresh` 200 → retry), not a defect; the demo database was built from the ORM and already had `ix_completed_work_door_id`, so migration 0075 is now idempotent (backend `f4e8f5c`). Backend `installed_series_14d` for the dashboard sparkline added (backend commit, test pending Docker); the frontend tile uses it (`dfbd499`).
 
 Remaining for the browser pass: the eight sections above, then a full-route visual brand smoke. They need a session where only Docker (db + api) and the dev server run; on this 3.9 GB host the pass dies otherwise.
+
+## 13. Follow-ups landed after the browser pass (2026-10-17)
+
+| Commit | What |
+|---|---|
+| admin `91f244e` | Hidden condensed bar no longer takes layout space (found in the browser). |
+| admin `dfbd499` + backend `d3980cb` | Dashboard sparkline is real: the report returns `installed_series_14d` (effective installations per day), the tile shows it with the week-over-week delta. Backend test assertion added, its run pending Docker. |
+| backend `f4e8f5c` | Migration 0075 idempotent for databases built from the ORM (the demo API restart-looped on it). |
+| admin (fonts) | Block 9, the part outside the other agent's file: Rubik and JetBrains Mono self-hosted through next/font, no Google Fonts @import; production build green. |
+| admin (tiles) | Project and catalog KPI cards on threshold tiles; no bar-coloured cards left in the views. |
+
+Still open: sidebar rail tooltips and the mobile drawer (block 9, `AppSidebar.tsx` is the other agent's); the browser pass for Монтажники, Журнал, Справочники, Начисления, Операции, Настройки, Типы дверей, Причины; reports tiering (owner to see in the browser first).
