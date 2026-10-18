@@ -161,9 +161,11 @@ Admin (`dimax-operations-suite-main`):
 | Live: Issues page opened on the new issue shows the issue-context launcher (summary / comment / priority+deadline prompts) | works | seen live |
 | Live: mobile 375px, Hebrew, RTL: `dir=rtl`, no horizontal overflow on the page and the admin scroller, the executed card readable; orb lighter (second ring hidden) | works | seen live |
 | Reduced motion: all AI animations sit under `prefers-reduced-motion: no-preference`; offscreen orb paused through IntersectionObserver | studied by code; Playwright HE run uses `reducedMotion: reduce` | studied by code |
-| Playwright `e2e/dimax-ai.spec.ts` (3 existing + 2 new: proposal confirmed once RU 1280px / HE 390px with screenshots) | see the block below | — |
+| Playwright `e2e/dimax-ai.spec.ts` on the production build (`.next-ai-core`, port 4191, mocked HTTP): 3 existing + 2 new (proposal card confirmed once, RU 1280px and HE 390px with `reducedMotion: reduce`, screenshots inspected: card, dialog result, RTL, no overflow) | 5 passed | confirmed by tests |
 | Real model run | not possible: no key on this machine; the live provider path is exercised only by mocked HTTP | needs external infra |
 | Installer cabinet / mobile AI, offline | not implemented in this pass (schema decision needed: AI history FK → admin_profiles) | blocked |
+
+Backend regression after the issues changes (`test_issues_admin_api`, `test_issue_lifecycle_sync`, `test_factory_issue_financials`, `test_admin_list_contracts`, `test_openapi_contract`): 45 passed — confirmed by tests.
 
 Demo side effects of the live check: one real issue on the demo project "צרפתי שמעון — בניין 1"
 (door `1--1-כ.מחסנים…`), one AI conversation with two tasks and one executed proposal for admin@dimax.dev.
