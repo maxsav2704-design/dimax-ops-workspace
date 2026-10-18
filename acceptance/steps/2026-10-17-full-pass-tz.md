@@ -156,3 +156,16 @@ Checked: `test_project_risks` (danger → risk OPEN, project AT_RISK, no issue r
 With this the decision list of block 16 has no deferred item left except W18 (the other agent's file).
 
 Addendum (2026-10-18, owner: "restart and check"): the demo api container (`docker-compose.workspace.yml`, source mounted, `alembic upgrade head` at start) was restarted; it came up healthy in 35 s with the database at `0078_project_risks`. Result on the demo database: 18 door-bound risk issues moved to `project_risks` (17 CLOSED, 1 OPEN on «צרפתי שמעון — בניין 1»), 0 left in `issues`, the five immutability guards of 0076 present. The moved open risk had left the project NORMAL, so backend `5b93f79` makes every sync health run recalculate every project in danger (test extended); one health run in the container set the project to AT_RISK / PROBLEM. Live in the admin after a fresh login: the Issues section lists no SYNC_RISK / DELIVERY_OUTBOX_RISK rows; the project header's facts strip shows «Системные риски · 1 · синхронизация монтажника» in the warn tone. The `run_sync_health_job` compose service is a forever loop (stopped by hand after its first pass); in the demo stack the maintenance worker is not running either, so until one of them runs, risks change only on `POST /admin/sync/health/run`.
+
+## 18. Full test run after the pass (2026-10-18, owner: "run the full test pass")
+
+| Contour | Result |
+|---|---|
+| Mobile | 67 files, 844 tests green; tsc clean. |
+| Admin, quality gate without the suite | repo-config, security-headers, type-scale and RTL ratchets, i18n helpers, a11y controls, coverage contract, production-env: all green. |
+| Admin, full Vitest | 79 files / 621 + 7 tests green (one load flake in DocumentsPage hardened with a longer wait, `npm run build` production build green: 27 routes). |
+| Backend, 78 unguarded integration files (in 5 chunks) | green after adaptations: catalogs audit tests use future-dated rate versions, the price review case plans its addon, the installer comment is appended, report tests tamper / clean up earnings rows below the 0076 guard, door prices follow the stored rates capability (backend `0f81bcd`). |
+| Backend, 10 guarded modules on `dimax_acceptance_tests` | 264 + 33 green, 4 skipped (Mailpit). They refuse any other database name, so they had never run in this workspace; two SMTP retry tests expected an immediate retry and were adapted to the delivery backoff of `286bace` (backend `27b7b29`). |
+| Backend, architecture | 176 green. |
+
+Found by the full run and fixed: project detail hid door prices for the default admin (token flag vs stored capability); the guarded modules' assumptions about immediate outbox retries. Recipe for next time: the unguarded files run on `dimax`, the guarded ones need `DATABASE_URL=.../dimax_acceptance_tests` and `APP_ENV=test`; `alembic upgrade head` before pytest on both; chunks of ~16 files keep the Docker engine alive on this host.
