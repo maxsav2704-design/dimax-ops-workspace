@@ -143,3 +143,14 @@ Final state: admin full Vitest 620 green (79 files), both ratchets green, tsc an
 | A1 system risk issues on a door (schema change) | **Deferred, mitigated.** New collisions are prevented (deterministic free door or none). Moving system risk to a project-level flag touches ~40 door-bound issue usages (lists, health, reports) and needs its own migration block; existing SYNC_RISK rows on the demo project stay until the health run moves on. |
 
 Checks: backend 274 + 235 + 82 + 5 + 18 green across the touched integration and architecture files on a test database migrated to 0077; admin IssuesPage / IndexPage green, tsc, eslint; not verified live: the comment thread in the browser (dev server picks it up on the next load), the maintenance worker loop, the demo database migration to 0076/0077 (the demo api applies migrations on restart; 0076 is idempotent for an ORM-built database).
+
+## 17. System risks moved from doors to the project (2026-10-18, owner: "take on the move")
+
+| Commit | What |
+|---|---|
+| backend `ce6040b` | Migration `0078_project_risks`: one row per project and kind (SYNC, DELIVERY_OUTBOX) with status, details, opened / closed time; existing SYNC_RISK / DELIVERY_OUTBOX_RISK issues are moved and removed from `issues`. `ProjectRiskRepository` on the unit of work; the sync health run and the delivery webhook open / close risks idempotently and recalculate project health; audit entries point at the risk. Project health: an open risk puts the project AT_RISK, only a reported door issue BLOCKS it; completion is not held back by a system risk. Project detail returns `open_risks`. The door-bound risk code and the free-door workaround are gone. |
+| admin (after `ce6040b`) | The facts strip under the project header shows "System risks" (warn, kinds in the detail) only when one is open; the Issues section no longer lists them as door problems. |
+
+Checked: `test_project_risks` (danger → risk OPEN, project AT_RISK, no issue rows; recovery → CLOSED, NORMAL), repository idempotency, the outbox webhook test on the new table, 70 green across issues / sync health / dashboard / projects / lifecycle / OpenAPI / migration safety on a test database migrated to 0078; admin ProjectsPage 53 green, tsc, eslint, ratchets. Not verified live: the demo database migration (the demo api applies 0076–0078 on restart; the three SYNC_RISK rows seen live on 2026-10-18 move to `project_risks` then); the installer device after the move (it simply stops receiving those rows as door issues).
+
+With this the decision list of block 16 has no deferred item left except W18 (the other agent's file).
