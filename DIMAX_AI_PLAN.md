@@ -32,8 +32,8 @@ history and task recovery without replacing the existing business application.
 | 4 | Installer web/mobile AI | Context-aware commands, RU/HE input and queued requests; offline completion stays usable | Implemented and tested (0080, installer tool set, cabinet /installer/ai, mobile /ai screen, 2026-10-19); voice input not included; live run only with the mock provider |
 | 5 | Prepare day / resolve obstacle / finish day workflows | Each workflow reaches a verified saved outcome or an explicit waiting state | Planned |
 | 6 | Business events and background worker | Committed events resume tasks without duplicate processing or notification loops | Partially: background worker implemented and tested (2026-10-19, `AI_EXECUTION_MODE=background`, `app.workers.ai_worker`); business events not started |
-| 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Planned |
-| 8 | Live pilot and operational release | Real model/tool checks, company isolation, regression gates, cost/latency monitoring and disable switch | Planned |
+| 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Partially: versioned owner rules implemented and tested (2026-10-19); journal/document status reads exist, document text knowledge not started |
+| 8 | Live pilot and operational release | Real model/tool checks, company isolation, regression gates, cost/latency monitoring and disable switch | Prepared: owner connection check, durable daily company budget, audit of latency/requests, disable switches (2026-10-19); the real-model run itself needs a key on the server |
 | 9 | Voice and optional marking recognition | Voice follows the same permissions; marking photos only help locate positions | Planned |
 
 ## Step 1 scope
@@ -139,6 +139,18 @@ the same pipeline as the inline path (live actor re-read with role, tools, propo
 metadata audit), so several workers never run one attempt twice. Inline tasks are claimed at start by
 the API; a retry clears the claim; a worker that dies leaves the lease to expire and the client gets
 INTERRUPTED with an explicit retry. Business events (resuming tasks on commits) remain open.
+
+## Steps 7 and 8, prepared parts (2026-10-19)
+
+`0082_ai_company_rules`: the owner writes company rules in plain language (Settings → DIMAX AI);
+every save is a new version, every admin can review them, the agent receives the current version as
+trust level 2 (it cannot add tools, grant rights or override the business rules) and every reply
+records `rules_version`. `AI_DAILY_TASK_LIMIT_PER_COMPANY` is a durable per-UTC-day budget shown in
+the status and enforced at start/retry (429). `POST /admin/ai/check` lets the owner run one tool-less
+provider round trip and see provider/model/latency or a stable error code (audited). New reads:
+calendar events (admin, bounded to 62 days), project journals (status, signed or not, delivery; no
+signer identity), installer workload (no money/contacts), and `my_schedule` for installers. Document
+text knowledge (answers citing document contents) is not started.
 
 ## Verification and rollout
 

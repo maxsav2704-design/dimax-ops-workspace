@@ -88,15 +88,15 @@ assignment untouched) exposed as `POST /admin/issues` for the office too.
 |---|---|---|---|---|
 | Dashboard | projects, open issues via tools | — | company-wide launcher | money tiles (no financial tools) |
 | Projects / doors | project summary, door pages, one door | issue report on a door | launcher: selected door, else project | install/not-installed facts, assignment, prices |
-| Calendar | — (no calendar tool yet) | — | — | planning dates |
+| Calendar | events in a date range, per project (admin); my schedule (installer) | — | — | planning dates |
 | Issues | project issues, one issue with comments | comment, workflow (state/priority/deadline) | launcher: selected issue | owner change, closing by installing |
-| Installers | search by name | — | — | contacts, identity, rates, earnings |
-| Journal / documents | — | — | — | signatures, factory confirmation |
+| Installers | search by name, workload (positions by status, projects, open issues) | — | — | contacts, identity, rates, earnings |
+| Journal / documents | journals of a project: status, signed or not, delivery, snapshot version | — | — | signatures, factory confirmation, signer identity |
 | Price / earnings / held work | — | — | — | any price or amount |
 | Reports | — | — | — | — |
 | Catalogs | reasons/types appear as names in door reads | — | — | catalog edits |
 | Operations / sync | — | — | — | sync and outbox decisions |
-| Settings | — | — | — | secrets, integrations |
+| Settings | DIMAX AI card: connection, budget, company rules (owner), connection check | — | — | secrets, integrations |
 | Installer cabinet / mobile | my projects / my positions / my issues (assignments only) | my issue report, my comment (the app's own commands) | cabinet: project page, focused issue; mobile: project screen | installation facts, prices, rates, earnings; offline flows unchanged |
 
 Rows with "—" are documented gaps, not hidden behaviour: the tool registry is the single place where a new
@@ -230,3 +230,26 @@ at once, the page polled, the worker claimed the task (`claimed_at` set after cr
 Limits: the worker is a polling loop (2 s idle), not an event consumer; one task per claim; no
 distributed budget; business events (plan step 6) and a real model (step 8) remain open. The web and
 mobile UIs needed no change: they already poll RUNNING tasks and offer cancel/retry.
+
+## 8. Company rules, budget, connection check, coverage reads (owner: "продолжай до 100%")
+
+Backend (`c0189f4`): `0082_ai_company_rules` + `AiRulesService` (versioned, metadata audit `AI_RULES_UPDATED`),
+`GET/PUT /admin/ai/rules` (owner writes, every admin reads), rules injected into the runner as trust level 2 with
+the explicit limit that they cannot add tools or override business rules, `reply.rules_version`; durable daily
+company budget (`AI_DAILY_TASK_LIMIT_PER_COMPANY`, 429 `TOO_MANY_REQUESTS` with a clear message, `daily_used/limit`
+in status); `POST /admin/ai/check` (owner, 3/min, tool-less round trip, codes only, audited `AI_CONNECTION_CHECK`);
+reads `list_calendar_events`, `project_journals`, `installer_workload`, `my_schedule`. Tests `test_dimax_ai_rules.py`
+(9): versions and audit without text, OPERATIONS cannot change rules or run the check, budget durable and replay-safe,
+check reports codes never bodies (200/401/500 mocked HTTP), mock provider check and 503 when not configured,
+calendar/journal/workload scoped and bounded (62 days, bad dates, no signer name, no rates), my_schedule shows only
+own events. All 75 AI cases green on `dimax_acceptance_tests` (0082 applied).
+
+Admin (`AiSettingsCard`): Settings → DIMAX AI card with connection facts, execution mode, budget, the rules editor
+(owner only; version, author, time), save and connection check with readable results; the workspace connection
+card shows execution mode, rules version and budget. Tests `AiSettingsCard.test.tsx` (3), Settings and workspace
+suites green, `tsc`, ESLint, ratchets clean.
+
+Live (demo api + worker recreated, 0082 applied): Settings → DIMAX AI shows provider, readiness, actions, execution mode
+and the budget; the owner saved rules (version 1, author and time shown), the connection check answered "works · mock · 13 ms";
+the workspace connection card shows "Правила компании: версия 1" and the next task completed with `rules_version` 1 stored in
+its reply — seen live.
