@@ -310,5 +310,7 @@ what is saved and what is not; "Подтвердить" executes once: the card 
 is not visible failed as a generic `AI_TASK_FAILED`; fixed so the worker records `AI_CONTEXT_NOT_FOUND` and both
 clients explain it ("Выбранный объект вам больше недоступен") — covered by `test_worker_marks_a_missing_context_with_a_named_code`.
 
+Entry points on the phone (mobile `ea48fb6`): a sparkles icon in the header of the home screen (no context), of the project screen (project context) and of the issues screen, plus the button "Спросить DIMAX AI об этом объекте" under the project's issues card; the two icons were tapped on the phone and opened the screen with the expected context — seen live. Metro in CI mode does not watch files: after code changes restart Metro and cold-start the app.
+
 Limits of this run: UI driven through adb (uiautomator dumps and taps), fonts and layout judged from screenshots;
 the "1 заблокировано" badge is a pre-existing queued sync event of the acceptance installer, not AI.
