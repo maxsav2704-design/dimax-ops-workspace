@@ -209,3 +209,24 @@ Not done / limits: no live installer login exists in the demo stack that could b
 creating or changing an account, so the installer surfaces are verified by tests and by the Playwright
 run with mocked HTTP, not by a live installer session; voice input (plan step 9) not started; the
 mobile screen was not run on a phone (owner: "в телефоне продолжим позже").
+
+## 7. Background execution (owner's choice of 2026-10-19: "делай 3 пункт")
+
+Backend (`AI_EXECUTION_MODE`, `0081_ai_worker_claims`, `app/workers/ai_worker.py`, compose `ai-worker`):
+the API queues in background mode and the worker claims once (`claimed_at`, SKIP LOCKED, fresh lease
+for the run) and executes `execute_task`, now the single pipeline for inline and worker runs. Status
+reports `execution`. Tests `test_dimax_ai_worker.py` (7): queue → claim once → COMPLETED → replay
+without a second run; four parallel workers claim once; inline tasks never picked by the worker;
+access revoked before the worker runs → FAILED `AI_ACCESS_CHANGED`, no answer; cancelled task
+skipped; expired lease not claimed, INTERRUPTED on read, explicit retry re-queues and the worker runs
+attempt 2; proposals prepared by a worker run are confirmable by the owner; mock provider through the
+worker. All 66 AI cases green on `dimax_acceptance_tests` (0081 applied).
+
+Live (demo stack recreated with the override: api in background mode + `ai-worker` container, 0081 applied
+to the demo DB): the admin workspace sent "Что не завершено на объекте?" with the project context; the API answered
+at once, the page polled, the worker claimed the task (`claimed_at` set after creation) and completed it in
+4 s with the mock provider; timeline and sources rendered as in inline mode — seen live.
+
+Limits: the worker is a polling loop (2 s idle), not an event consumer; one task per claim; no
+distributed budget; business events (plan step 6) and a real model (step 8) remain open. The web and
+mobile UIs needed no change: they already poll RUNNING tasks and offer cancel/retry.

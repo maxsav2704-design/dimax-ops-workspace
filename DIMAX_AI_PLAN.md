@@ -31,7 +31,7 @@ history and task recovery without replacing the existing business application.
 | 3 | Authorized mutations and approvals | Office issue report / comment / workflow reuse current commands; approvals bind to a specific version/payload | Implemented and tested (proposals + confirmation, 2026-10-19); position completion and reasons intentionally not given to the agent |
 | 4 | Installer web/mobile AI | Context-aware commands, RU/HE input and queued requests; offline completion stays usable | Implemented and tested (0080, installer tool set, cabinet /installer/ai, mobile /ai screen, 2026-10-19); voice input not included; live run only with the mock provider |
 | 5 | Prepare day / resolve obstacle / finish day workflows | Each workflow reaches a verified saved outcome or an explicit waiting state | Planned |
-| 6 | Business events and background worker | Committed events resume tasks without duplicate processing or notification loops | Planned |
+| 6 | Business events and background worker | Committed events resume tasks without duplicate processing or notification loops | Partially: background worker implemented and tested (2026-10-19, `AI_EXECUTION_MODE=background`, `app.workers.ai_worker`); business events not started |
 | 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Planned |
 | 8 | Live pilot and operational release | Real model/tool checks, company isolation, regression gates, cost/latency monitoring and disable switch | Planned |
 | 9 | Voice and optional marking recognition | Voice follows the same permissions; marking photos only help locate positions | Planned |
@@ -129,6 +129,16 @@ workspace with surface=installer), a nav entry and launchers on the project and 
 The mobile app gets the `/ai` screen on the installer API (context from the project screen, proposal
 cards with a stable decision token, recent conversations) and an explicit offline state that points
 to the sync queue; door actions keep queuing offline exactly as before.
+
+## Step 6, worker part (2026-10-19)
+
+`AI_EXECUTION_MODE=background` makes the API record the task as RUNNING and unclaimed and answer at
+once; the web and mobile clients poll it (3 s). `app.workers.ai_worker` (compose service `ai-worker`)
+claims one task at a time with `FOR UPDATE SKIP LOCKED`, refreshes the lease for the run and executes
+the same pipeline as the inline path (live actor re-read with role, tools, proposals, finish/fail,
+metadata audit), so several workers never run one attempt twice. Inline tasks are claimed at start by
+the API; a retry clears the claim; a worker that dies leaves the lease to expire and the client gets
+INTERRUPTED with an explicit retry. Business events (resuming tasks on commits) remain open.
 
 ## Verification and rollout
 
