@@ -97,7 +97,7 @@ assignment untouched) exposed as `POST /admin/issues` for the office too.
 | Catalogs | reasons/types appear as names in door reads | — | — | catalog edits |
 | Operations / sync | — | — | — | sync and outbox decisions |
 | Settings | — | — | — | secrets, integrations |
-| Installer cabinet / mobile | not available (schema binds AI history to admin profiles) | — | — | installer never sets price/amount; offline flows unchanged |
+| Installer cabinet / mobile | my projects / my positions / my issues (assignments only) | my issue report, my comment (the app's own commands) | cabinet: project page, focused issue; mobile: project screen | installation facts, prices, rates, earnings; offline flows unchanged |
 
 Rows with "—" are documented gaps, not hidden behaviour: the tool registry is the single place where a new
 read or action is added, and the proposal/confirmation mechanism is reused unchanged.
@@ -163,9 +163,49 @@ Admin (`dimax-operations-suite-main`):
 | Reduced motion: all AI animations sit under `prefers-reduced-motion: no-preference`; offscreen orb paused through IntersectionObserver | studied by code; Playwright HE run uses `reducedMotion: reduce` | studied by code |
 | Playwright `e2e/dimax-ai.spec.ts` on the production build (`.next-ai-core`, port 4191, mocked HTTP): 3 existing + 2 new (proposal card confirmed once, RU 1280px and HE 390px with `reducedMotion: reduce`, screenshots inspected: card, dialog result, RTL, no overflow) | 5 passed | confirmed by tests |
 | Real model run | not possible: no key on this machine; the live provider path is exercised only by mocked HTTP | needs external infra |
-| Installer cabinet / mobile AI, offline | not implemented in this pass (schema decision needed: AI history FK → admin_profiles) | blocked |
+| Installer cabinet / mobile AI, offline | implemented in block 6 below | see block 6 |
 
 Backend regression after the issues changes (`test_issues_admin_api`, `test_issue_lifecycle_sync`, `test_factory_issue_financials`, `test_admin_list_contracts`, `test_openapi_contract`): 45 passed — confirmed by tests.
 
 Demo side effects of the live check: one real issue on the demo project "צרפתי שמעון — בניין 1"
 (door `1--1-כ.מחסנים…`), one AI conversation with two tasks and one executed proposal for admin@dimax.dev.
+
+## 6. Installer cabinet and mobile (owner's request of 2026-10-19, "берись за кабинет монтажника и мобильный аи")
+
+Decision taken: the AI history no longer belongs to admin profiles. `0080_ai_installers` drops the
+composite FK, adds `owner_role` and makes `admin_scope` nullable; the live actor is re-read with its
+role before every tool, answer and confirmation, and a role change hides the old history.
+
+Backend (`53a40ce`): installer tool set and two proposal actions (registry `role="INSTALLER"`),
+`require_installer_id` (active, non-deleted installer linked to the user; unlinked → 403),
+shared route registration (`api/routes.py`) for `/admin/ai` and `/installer/ai`, mock provider
+resolves either tool set. Tests `test_dimax_ai_installer.py` (9): tool set without installation/money
+tools and without admin tools; unlinked installer refused; reads limited to assigned positions
+(colleague's door → NOT_FOUND, admin tools → forbidden, `mark_installed` → forbidden, no price
+fields, comment as untrusted text); the scenario (project context → my doors → proposal → confirm
+once → issue by the installer, door ISSUE_OPEN, replay and second click do nothing, installer paths in
+sources); colleague's door never becomes a proposal; own comment with injection text as data; the
+admin router cannot read or confirm the installer's conversation/proposal; role change hides history
+and closes the installer router; mock provider without a key. All 59 AI cases green.
+
+Admin cabinet (`0c5ab91`): `DimaxAiPage` and `AiAssistPanel` take `surface` (admin | installer):
+installer API, `/installer/ai` routes, installer-only access, installer prompts and subtitle;
+`safeAiSourcePath` accepts cabinet paths; nav entry "DIMAX AI" in `InstallerShell` (EN/RU/HE);
+launchers on the installer project page (project context) and on the focused issue. Vitest 59 across
+the touched files, `tsc`, ESLint clean. Playwright: installer cabinet HE at 390px (installer API only,
+context chip, source link to the cabinet project, RTL, no overflow) — see the verification line below.
+
+Mobile (`e46c197`): `src/modules/ai/{navigation,client}.ts` (routes without the API import for light
+screens; API calls, failure classification without provider bodies, preview rows, source → app route
+mapping that never trusts server paths), `app/ai.tsx` (status pills with provider/actions, context from
+the project screen, question with prompts, thread with answers, source rows, proposal cards with
+before/after, ConfirmDialog, stable decision token across a lost response, reject, recent
+conversations; explicit offline state with the sync queue shortcut), entry button on the project
+screen, Stack route. Tests: helpers (4) and the screen (4: installer API only + context, confirm once
+after a lost response, offline state + queue shortcut, access failure without provider details + Hebrew
+right alignment); the whole mobile suite 852 green, discovery contract 69 files, `tsc` clean.
+
+Not done / limits: no live installer login exists in the demo stack that could be used without
+creating or changing an account, so the installer surfaces are verified by tests and by the Playwright
+run with mocked HTTP, not by a live installer session; voice input (plan step 9) not started; the
+mobile screen was not run on a phone (owner: "в телефоне продолжим позже").

@@ -29,7 +29,7 @@ history and task recovery without replacing the existing business application.
 | 1 | AI runtime, operational read tools and admin workspace | Model can call authorized functions, return an answer and show server-derived source links; provider failures are explicit | Implemented and tested; live key/model activation pending |
 | 2 | Persistent tasks, conversations and replay protection | A task survives restart; repeated requests return saved state without starting a second run | Implemented and tested; normal DB rollout/live activation pending |
 | 3 | Authorized mutations and approvals | Office issue report / comment / workflow reuse current commands; approvals bind to a specific version/payload | Implemented and tested (proposals + confirmation, 2026-10-19); position completion and reasons intentionally not given to the agent |
-| 4 | Installer web/mobile AI | Context-aware commands, RU/HE input and queued requests; offline completion stays usable | Planned; blocked by a schema decision (AI history is bound to admin profiles) |
+| 4 | Installer web/mobile AI | Context-aware commands, RU/HE input and queued requests; offline completion stays usable | Implemented and tested (0080, installer tool set, cabinet /installer/ai, mobile /ai screen, 2026-10-19); voice input not included; live run only with the mock provider |
 | 5 | Prepare day / resolve obstacle / finish day workflows | Each workflow reaches a verified saved outcome or an explicit waiting state | Planned |
 | 6 | Business events and background worker | Committed events resume tasks without duplicate processing or notification loops | Planned |
 | 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Planned |
@@ -114,6 +114,21 @@ selects a deterministic demo provider for stacks without a key; status reports `
 `real_model_verified=false`. The admin `/ai` workspace shows the timeline, sources, proposal cards
 with a one-time confirmation, and sections open it with their object as context (`AiAssistPanel`).
 Evidence: acceptance/steps/2026-10-19-dimax-ai-agent.md.
+
+## Step 4 scope (2026-10-19)
+
+`0080_ai_installers` lets any active user own AI conversations (`owner_role`, nullable scope); a
+role change hides the old history like a scope change. Installers get their own tool set
+(`my_projects`, `my_project_summary`, `my_project_doors`, `my_door`, `my_project_issues`, `my_issue`)
+bounded by their assignments, and two proposal actions that reuse the app's own commands:
+`propose_my_issue_report` (InstallerIssuesApiService.create_issue with the assignment check) and
+`propose_my_issue_comment`. No installation facts, prices, rates or earnings are tools. The routes
+are shared: `/api/v1/installer/ai/*` registers the same handlers as `/admin/ai/*` behind
+`require_installer` + the installer linkage check. The web cabinet gets `/installer/ai` (the same
+workspace with surface=installer), a nav entry and launchers on the project and the focused issue.
+The mobile app gets the `/ai` screen on the installer API (context from the project screen, proposal
+cards with a stable decision token, recent conversations) and an explicit offline state that points
+to the sync queue; door actions keep queuing offline exactly as before.
 
 ## Verification and rollout
 
