@@ -193,7 +193,7 @@ installer API, `/installer/ai` routes, installer-only access, installer prompts 
 `safeAiSourcePath` accepts cabinet paths; nav entry "DIMAX AI" in `InstallerShell` (EN/RU/HE);
 launchers on the installer project page (project context) and on the focused issue. Vitest 59 across
 the touched files, `tsc`, ESLint clean. Playwright: installer cabinet HE at 390px (installer API only,
-context chip, source link to the cabinet project, RTL, no overflow) — see the verification line below.
+context chip, source link to the cabinet project, RTL, no overflow): 6 passed on the production build (`.next-ai-core`, port 4191, mocked HTTP), screenshot inspected — confirmed by tests. Two e2e lessons recorded for the next session: type only after a client-fetched text is visible (the pre-rendered HTML drops typed text on hydration), and mock the conversation's task page because the workspace reloads the conversation after a send.
 
 Mobile (`e46c197`): `src/modules/ai/{navigation,client}.ts` (routes without the API import for light
 screens; API calls, failure classification without provider bodies, preview rows, source → app route
