@@ -290,3 +290,25 @@ its reply — seen live.
 | Company rules, budget, connection check | implemented and tested, seen live |
 | Real model | not possible here: no key on the machine; the owner's check button verifies a key once it is set on the server |
 | Business events resuming tasks | decided out for now: in the proposal model a task completes in one run and humans confirm; nothing waits for events |
+
+## 11. Phone run of the mobile DIMAX AI screen (owner: "прогони мобильную версию, телефон подключен")
+
+Setup: the dev client `com.dimax.operations.installer` on the phone `a269dc99`, Metro 8081 with
+`EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:8000` and `adb reverse` for 8000/8081, the demo api in background
+mode with the mock provider. Docker Desktop had stopped and was started again; the phone's USB session dropped
+adb several times (reverses restored each time). The phone was signed out of the acceptance installer and signed
+in as the seeded demo installer (`installer1@dimax.dev`, password from `app/scripts/seed_dev.py`, never in docs);
+two unfinished doors of the demo project were assigned to that installer directly in the demo DB for the check.
+
+Seen live on the phone: deep link `dimax-installer://ai?context=project:…` opens the screen with the provider,
+actions and context pills; the ready prompt "Записать препятствие по позиции" fills the question; the task runs
+through the worker and the thread shows the answer, the source rows (project, position) and the proposal card
+(before/after, "Ждёт вашего решения"); "Проверить и подтвердить" opens the confirm dialog with the full text of
+what is saved and what is not; "Подтвердить" executes once: the card turns green "Сохранено и проверено" with
+"Открыть запись" rows; DB: issue OPEN/NEW created by the installer user, door ISSUE_OPEN, proposal EXECUTED by
+`installer1@dimax.dev`. A first run on a soft-deleted project surfaced a gap: a queued task whose selected object
+is not visible failed as a generic `AI_TASK_FAILED`; fixed so the worker records `AI_CONTEXT_NOT_FOUND` and both
+clients explain it ("Выбранный объект вам больше недоступен") — covered by `test_worker_marks_a_missing_context_with_a_named_code`.
+
+Limits of this run: UI driven through adb (uiautomator dumps and taps), fonts and layout judged from screenshots;
+the "1 заблокировано" badge is a pre-existing queued sync event of the acceptance installer, not AI.
