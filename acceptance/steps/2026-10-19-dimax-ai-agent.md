@@ -253,3 +253,40 @@ Live (demo api + worker recreated, 0082 applied): Settings → DIMAX AI shows pr
 and the budget; the owner saved rules (version 1, author and time shown), the connection check answered "works · mock · 13 ms";
 the workspace connection card shows "Правила компании: версия 1" and the next task completed with `rules_version` 1 stored in
 its reply — seen live.
+
+## 9. Document content, voice, live installer run (closing the pass)
+
+- `journal_document` (backend `edff196`): one journal at its snapshot version — positions and add-on works
+  listed in it (quantities, no prices), signed or not, notes as untrusted text, a quotable source label
+  "journal <title>, snapshot version N"; the `extra` JSON of items (which may hold prices) and the signer name are
+  never returned — confirmed by tests (`test_journal_document_is_quoted_with_its_snapshot_version_and_without_money`).
+- Voice (admin `c7f5dd3`): the workspace composer shows "Dictate" only when the browser offers speech recognition;
+  dictation runs in the current language (ru-RU / he-IL / en-US) and only fills the question; rights and the
+  proposal flow are unchanged — confirmed by tests (fake recognition, hidden without support). Mobile voice is not
+  started (needs a native module and a device run).
+- Installer proposal titles fixed (`e430476`): the installer actions now have readable names in EN/RU/HE.
+- Live installer run (seeded login `installer1@dimax.dev` from `app/scripts/seed_dev.py`, one unfinished door of the
+  demo project assigned to that installer directly in the demo DB for the check): the cabinet shows the "DIMAX AI" nav
+  entry; `/installer/ai` with the project context lists provider, actions, background execution, rules version 1 and
+  the budget; "Какие мои позиции не установлены? Нет доступа, запиши замечание" → the worker completed the task,
+  the card proposed the installer's own report on the assigned door → "Проверить и подтвердить" → "Подтвердить" →
+  "Сохранено и проверено" with links to the cabinet issue and project. DB: issue OPEN/NEW created by the installer
+  user, door ISSUE_OPEN with its version bumped, audit `AI_PROPOSAL_CREATED` and `AI_ACTION_EXECUTED` by the installer,
+  conversation owned as INSTALLER without a scope; the installer issues page opens the issue with its own launcher — seen live.
+
+## 10. Status against the original prompt
+
+| Requirement | Status |
+|---|---|
+| Study, fact state, weak/missing, highest value | done (block 1) |
+| Agent operating model, tool specs with rights/limits/version check/retry, server-side authority | implemented and tested (blocks 2, 4) |
+| Coverage matrix for every section | done; reads for dashboard/projects/doors/issues/installers/calendar/journal/documents; actions in issues; price/earnings/reports/operations/settings intentionally without agent writes (block 3) |
+| One agent mechanism everywhere | one registry, one pipeline (`execute_task`), one workspace with `surface`, launchers on sections, installer cabinet and mobile on the same API |
+| Business rules preserved | confirmed by tests: no installation facts, prices, rates, earnings, assignments, signatures; installers see only their positions |
+| Unified system: context, allowed tools, persisted tasks/decisions, continuation after confirmation, retries, version conflicts, audit, limits, feature flags, provider outage, trust levels, injection protection, revocation, secrets server-side | implemented and tested; continuation after confirmation is deterministic verification (no second model call) |
+| Visual language for /ai and compact variants, RU/HE/EN, RTL, keyboard, reduced motion, mobile | implemented; Playwright 6 (RU/HE, 390/1280, reduced motion), screenshots inspected |
+| Installer cabinet and mobile with offline | implemented and tested; cabinet seen live; mobile screen tested, not run on a phone |
+| Background execution | implemented and tested, seen live |
+| Company rules, budget, connection check | implemented and tested, seen live |
+| Real model | not possible here: no key on the machine; the owner's check button verifies a key once it is set on the server |
+| Business events resuming tasks | decided out for now: in the proposal model a task completes in one run and humans confirm; nothing waits for events |

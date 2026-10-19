@@ -32,9 +32,9 @@ history and task recovery without replacing the existing business application.
 | 4 | Installer web/mobile AI | Context-aware commands, RU/HE input and queued requests; offline completion stays usable | Implemented and tested (0080, installer tool set, cabinet /installer/ai, mobile /ai screen, 2026-10-19); voice input not included; live run only with the mock provider |
 | 5 | Prepare day / resolve obstacle / finish day workflows | Each workflow reaches a verified saved outcome or an explicit waiting state | Planned |
 | 6 | Business events and background worker | Committed events resume tasks without duplicate processing or notification loops | Partially: background worker implemented and tested (2026-10-19, `AI_EXECUTION_MODE=background`, `app.workers.ai_worker`); business events not started |
-| 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Partially: versioned owner rules implemented and tested (2026-10-19); journal/document status reads exist, document text knowledge not started |
+| 7 | Approved company rules and document knowledge | Persistent rules are reviewable; document answers identify authoritative source/version | Partially: versioned owner rules implemented and tested (2026-10-19); journal/document status reads exist, journal content read at its snapshot version (`journal_document`); PDF/free-text knowledge not started |
 | 8 | Live pilot and operational release | Real model/tool checks, company isolation, regression gates, cost/latency monitoring and disable switch | Prepared: owner connection check, durable daily company budget, audit of latency/requests, disable switches (2026-10-19); the real-model run itself needs a key on the server |
-| 9 | Voice and optional marking recognition | Voice follows the same permissions; marking photos only help locate positions | Planned |
+| 9 | Voice and optional marking recognition | Voice follows the same permissions; marking photos only help locate positions | Partially: web dictation through the browser's speech recognition fills the question (2026-10-19); mobile voice and marking recognition not started |
 
 ## Step 1 scope
 
