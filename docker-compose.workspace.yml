@@ -150,6 +150,16 @@ services:
     command: python -m app.workers.sync_gc_worker
     restart: unless-stopped
 
+  # DIMAX AI background execution: active when AI_EXECUTION_MODE=background (shared with the api
+  # through backend/.env); idle otherwise.
+  ai-worker:
+    <<: *backend-runtime
+    depends_on:
+      api:
+        condition: service_healthy
+    command: python -m app.workers.ai_worker
+    restart: unless-stopped
+
   admin:
     image: node:20-alpine
     working_dir: /app
