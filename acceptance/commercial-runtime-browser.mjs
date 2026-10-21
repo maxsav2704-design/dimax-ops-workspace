@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
+import { checkTerms } from './commercial-terms-browser.mjs';
 
 const require = createRequire(resolve('dimax-operations-suite-main/package.json'));
 const { chromium, expect: baseExpect, request } = require('@playwright/test');
@@ -139,6 +140,7 @@ try {
   await page.getByRole('button', { name: 'RU', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Расчёты с заводом' })).toBeVisible();
   await page.screenshot({ path: resolve(output, persisted ? 'persisted-ru.png' : 'live-ru.png'), fullPage: true });
+  if (process.argv.includes('--terms')) await checkTerms({ page, api, contract: proof.contract, save, expect, output, persisted });
   assert.deepEqual(deniedRequests, []);
   assert.deepEqual(errors, []);
   console.log(persisted

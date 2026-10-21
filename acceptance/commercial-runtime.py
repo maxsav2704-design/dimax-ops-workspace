@@ -47,7 +47,7 @@ def guard():
     import_all_orm_models()
     with SessionLocal() as db:
         assert db.scalar(text('SELECT current_database()')) == url.database
-        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0084_commercial_drafts'
+        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0085_commercial_terms'
 
 
 def snapshot(db):
@@ -127,12 +127,19 @@ def login(client, fixture, scope):
 def verify(persisted=False):
     fixture = json.loads((PROOF / 'private-session.json').read_text())
     browser = json.loads((PROOF / 'browser-proof.json').read_text())
+    terms = json.loads((PROOF / 'terms-proof.json').read_text()) if (PROOF / 'terms-proof.json').exists() else None
+    terms_path = CONTRACTS + '/' + browser['contract']['id'] + '/terms'
     assert fixture['kind'] == 'dimax-commercial-runtime'
     path = CONTRACTS + '/' + browser['contract']['id'] + '/prices'
     with httpx.Client(timeout=30) as owner:
         login(owner, fixture, 'OWNER')
         rows = request(owner, 'GET', CONTRACTS)
         assert rows['total'] == 1 and rows['items'][0] == browser['contract']
+        if terms:
+            assert request(owner, 'GET', terms_path)['total'] == 2
+            for row in terms['versions']:
+                assert request(owner, 'GET', terms_path + '/' + row['id']) == row
+                assert row['is_demo'] and not row['factory_confirmed'] and not row['usable_for_billing']
         for price in browser['prices']:
             assert request(owner, 'GET', path + '/' + price['id']) == price
             assert price['is_demo'] and price['status'] == 'DRAFT'
@@ -146,6 +153,10 @@ def verify(persisted=False):
                     request(other, 'GET', path, expected=403)
                     request(other, 'POST', CONTRACTS, browser['contract_body'], expected=403)
                     request(other, 'POST', path, browser['price_bodies'][0], expected=403)
+                    if terms:
+                        request(other, 'GET', terms_path, expected=403)
+                        request(other, 'GET', terms_path + '/' + terms['versions'][0]['id'], expected=403)
+                        request(other, 'POST', terms_path, terms['bodies'][0], expected=403)
                 checks.append(scope)
             assert request(owner, 'POST', CONTRACTS, browser['contract_body']) == browser['contract']
             for body, price in zip(browser['price_bodies'], browser['prices']):
@@ -160,6 +171,11 @@ def verify(persisted=False):
             request(owner, 'PATCH', path + '/' + browser['prices'][0]['id'], {}, expected=405)
             request(owner, 'POST', path + '/' + browser['prices'][0]['id'] + '/activate', {}, expected=404)
             assert request(owner, 'POST', path, browser['race_body']) == browser['race_price']
+            if terms:
+                for body, row in zip(terms['bodies'], terms['versions']):
+                    assert request(owner, 'POST', terms_path, body) == row
+                stale_terms = {**terms['bodies'][1], 'request_id': str(uuid4())}
+                request(owner, 'POST', terms_path, stale_terms, expected=409)
             with SessionLocal.begin() as db:
                 db.execute(text("UPDATE admin_profiles SET admin_scope='VIEWER' WHERE user_id=:id"),
                            {'id': fixture['users']['OWNER']['id']})
@@ -182,6 +198,10 @@ def verify(persisted=False):
                 request(other, 'GET', path, expected=404)
                 request(other, 'GET', path + '/' + browser['prices'][0]['id'], expected=404)
                 request(other, 'POST', path, browser['price_bodies'][0], expected=404)
+                if terms:
+                    request(other, 'GET', terms_path, expected=404)
+                    request(other, 'GET', terms_path + '/' + terms['versions'][0]['id'], expected=404)
+                    request(other, 'POST', terms_path, terms['bodies'][0], expected=404)
             print('PASS: foreign OWNER cannot read or write another company contract')
         assert request(owner, 'GET', path)['total'] == 3
         assert request(owner, 'GET', path + '/' + browser['race_price']['id']) == browser['race_price']
@@ -191,7 +211,7 @@ def verify(persisted=False):
         assert snapshot(db) == fixture['baseline'], 'Installer finance or door data changed'
         counts = db.execute(text('SELECT entity_type, count(*) FROM audit_logs '
                                  "WHERE entity_type LIKE 'COMMERCIAL_%' GROUP BY entity_type ORDER BY entity_type")).all()
-        assert counts == [('COMMERCIAL_CONTRACT', 1), ('COMMERCIAL_PRICE', 3)]
+        assert counts == [('COMMERCIAL_CONTRACT', 1), ('COMMERCIAL_PRICE', 3)] + ([('COMMERCIAL_TERMS', 2)] if terms else [])
         print('Commercial audit counts:', counts)
     print('PASS: stored snapshots and nonzero installer financial baseline unchanged' + (' after API restart' if persisted else ''))
 
