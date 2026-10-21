@@ -160,6 +160,21 @@ services:
     command: python -m app.workers.ai_worker
     restart: unless-stopped
 
+  # Document import inbox: files dropped into ./artifacts/import-inbox/<company_id>/ (and, when configured in
+  # backend/.env, attachments from the factory mailbox) are matched to projects and imported automatically.
+  import-inbox-worker:
+    <<: *backend-runtime
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      IMPORT_INBOX_DIR: /data/import-inbox
+    volumes:
+      - ./backend:/app
+      - ./artifacts/import-inbox:/data/import-inbox
+    command: python -m app.workers.import_inbox_worker
+    restart: unless-stopped
+
   admin:
     image: node:20-alpine
     working_dir: /app
