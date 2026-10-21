@@ -47,7 +47,7 @@ def guard():
     import_all_orm_models()
     with SessionLocal() as db:
         assert db.scalar(text('SELECT current_database()')) == url.database
-        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0085_commercial_terms'
+        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0086_commercial_approvals'
 
 
 def snapshot(db):

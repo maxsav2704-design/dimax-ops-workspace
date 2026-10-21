@@ -1,0 +1,11 @@
+# Overlay ONLY commercial-runtime.compose.yml, never a working deployment.
+# No SMTP/outbox worker is started. Mail rendering is captured by the guarded
+# acceptance program; the API network has no external egress.
+services:
+  api:
+    environment:
+      EMAIL_ENABLED: "true"
+      PUBLIC_APP_BASE_URL: https://commercial.example.com
+      FACTORY_APPROVAL_EMAIL_KEY: YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWE=
+    volumes:
+      - ./commercial-approval-runtime.py:/acceptance/approval.py:ro
