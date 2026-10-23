@@ -1,0 +1,141 @@
+name: Commercial Approval Isolated Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/commercial-acceptance-*']
+    paths:
+      - '.github/workflows/commercial-approval-acceptance.yml'
+      - 'acceptance/commercial-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commercial-approval-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  isolated-chain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      DIMAX_COMMERCIAL_PROJECT: dimax-approval-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      COMPOSE_PROJECT_NAME: dimax-approval-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      COMPOSE_FILE: acceptance/commercial-runtime.compose.yml:acceptance/commercial-approval.compose.yml:acceptance/commercial-approval-mailpit.compose.yml:acceptance/commercial-approval-ci.compose.yml
+      DIMAX_COMMERCIAL_SOURCE: ${{ github.workspace }}/backend
+      DIMAX_COMMERCIAL_PROOF: ${{ github.workspace }}/runtime-private
+      DIMAX_COMMERCIAL_MAILPIT: '1'
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8003
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-backend
+          ref: 55d7c7ca9a6bb2f6130e26f875d6c8c31d6b7966
+          path: backend
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-frontend
+          ref: be6be085e9baa222ce5862f0fed9ce5806ac7fe1
+          path: dimax-operations-suite-main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify resources and isolated inputs
+        run: |
+          python - <<'PY'
+          import os, pathlib
+          memory = {line.split(':')[0]: int(line.split()[1]) for line in pathlib.Path('/proc/meminfo').read_text().splitlines()}
+          assert memory['MemTotal'] >= 6 * 1024 * 1024, 'At least 6 GiB RAM required'
+          assert memory['MemAvailable'] >= 4 * 1024 * 1024, 'At least 4 GiB available RAM required'
+          assert os.environ['GITHUB_ACTIONS'] == 'true'
+          assert not pathlib.Path('backend/.env').exists()
+          assert not pathlib.Path('dimax-operations-suite-main/.env.local').exists()
+          print('PASS: dedicated runner resources and clean source snapshots')
+          PY
+          mkdir runtime-private evidence
+          sudo chown 10001:10001 runtime-private
+          python -c "import ast,pathlib; [ast.parse(pathlib.Path(p).read_text()) for p in ['acceptance/commercial-runtime.py','acceptance/commercial-approval-runtime.py']]"
+          node --check acceptance/commercial-approval-browser.mjs
+      - name: Build test API and create disposable databases
+        run: |
+          docker compose build api
+          docker compose up -d --wait --wait-timeout 120 db mailpit
+          docker compose exec -T db createdb -U postgres dimax_acceptance_tests
+      - name: Complete remaining 119-case regression
+        timeout-minutes: 15
+        run: |
+          docker compose run --rm --no-deps \
+            -e DATABASE_URL=postgresql+psycopg2://postgres:commercial-disposable-only@db:5432/dimax_acceptance_tests \
+            -e TEST_DATABASE_URL=postgresql+psycopg2://postgres:commercial-disposable-only@db:5432/dimax_acceptance_tests \
+            -e EMAIL_ENABLED=false api sh -ec '
+              alembic upgrade head
+              python -m pytest -q --junitxml=/proof/regression.xml \
+                tests/integration/test_work_price_accruals.py \
+                tests/integration/test_work_price_approvals.py \
+                tests/integration/test_work_price_proposals.py \
+                tests/integration/test_commercial_activation.py
+            '
+          python - <<'PY'
+          import json, pathlib, xml.etree.ElementTree as ET
+          suites = ET.parse('runtime-private/regression.xml').getroot().findall('testsuite')
+          counts = {key: sum(int(s.get(key, '0')) for s in suites) for key in ('tests', 'failures', 'errors', 'skipped')}
+          assert counts == {'tests': 119, 'failures': 0, 'errors': 0, 'skipped': 0}, counts
+          pathlib.Path('evidence/regression-summary.json').write_text(json.dumps(counts, indent=2))
+          PY
+      - name: Start fresh browser API and prepare synthetic versions
+        run: |
+          docker compose up -d api gateway
+          curl --fail --silent --max-time 5 --retry 45 --retry-all-errors --retry-delay 2 --retry-max-time 180 http://127.0.0.1:8003/ready
+          docker compose exec -T api python /acceptance/approval.py prepare
+          sudo chown -R "$(id -u):10001" runtime-private
+          # Share only with the container's unprivileged group, not all users.
+          chmod 2770 runtime-private
+      - name: Build standalone admin with supported Node 20
+        working-directory: dimax-operations-suite-main
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+          cp -r public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -r .next/static .next/standalone/.next/static
+          HOSTNAME=127.0.0.1 PORT=4194 nohup node .next/standalone/server.js > "$RUNNER_TEMP/commercial-admin.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4194/login > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Browser invitation, real SMTP, factory decision and access guards
+        run: node acceptance/commercial-approval-browser.mjs
+      - name: Verify persistence and protected downgrade
+        run: |
+          docker compose restart api
+          curl --fail --silent --max-time 5 --retry 45 --retry-all-errors --retry-delay 2 --retry-max-time 180 http://127.0.0.1:8003/ready
+          docker compose exec -T api python /acceptance/approval.py verify
+          if docker compose exec -T api alembic downgrade 0085_commercial_terms > "$RUNNER_TEMP/commercial-downgrade.log" 2>&1; then
+            echo 'FAIL: downgrade discarded protected history'
+            exit 1
+          fi
+          grep -F 'Cannot discard commercial confirmation history' "$RUNNER_TEMP/commercial-downgrade.log"
+          docker compose exec -T api python /acceptance/approval.py verify
+          cp runtime-private/approval-*.png evidence/
+          printf '%s\n' 'PASS: browser, SMTP, roles, financial digests, restart and protected downgrade' > evidence/result.txt
+      - name: Upload allowlisted non-secret evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-approval-evidence
+          path: evidence/
+          retention-days: 3
+      - name: Remove only this runner's disposable environment
+        if: always()
+        run: |
+          docker compose down --volumes --remove-orphans --timeout 20
+          sudo rm -rf runtime-private

@@ -1,0 +1,17 @@
+# Optional local SMTP acceptance; overlay the two commercial-runtime files only.
+# No host port, relay, external SMTP credentials or persistent mail volume.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.30.3
+    mem_limit: 64m
+    networks: [isolated]
+  api:
+    environment:
+      DIMAX_COMMERCIAL_MAILPIT: "1"
+      DIMAX_FACTORY_MAILPIT: "1"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_TLS: "false"
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      SMTP_FROM: acceptance@commercial.example.com

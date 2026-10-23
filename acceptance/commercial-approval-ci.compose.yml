@@ -1,0 +1,12 @@
+# Use only with the disposable commercial acceptance Compose files.
+services:
+  api:
+    build:
+      context: ${DIMAX_COMMERCIAL_SOURCE:?Set the clean source snapshot}
+    mem_limit: 1536m
+    command:
+      - sh
+      - -ec
+      - |
+        alembic upgrade head
+        exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-access-log

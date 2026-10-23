@@ -1,0 +1,75 @@
+# Standalone disposable acceptance; never combine with working Compose files.
+services:
+  db:
+    image: postgres:16-alpine
+    mem_limit: 256m
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: commercial-disposable-only
+      POSTGRES_DB: dimax_commercial_runtime_tests
+    tmpfs: [/var/lib/postgresql/data]
+    networks: [isolated]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d dimax_commercial_runtime_tests"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  api:
+    image: dimax-backend-workspace:local
+    init: true
+    mem_limit: 640m
+    working_dir: /workspace
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        if [ -e /workspace/.env ]; then
+          echo 'Refusing a source snapshot containing .env' >&2
+          exit 1
+        fi
+        exec /usr/local/bin/dimax-entrypoint "$$@"
+      - --
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      APP_ENV: test
+      DATABASE_URL: postgresql+psycopg2://postgres:commercial-disposable-only@db:5432/dimax_commercial_runtime_tests
+      JWT_SECRET: commercial-disposable-jwt-not-for-production
+      PYTHONPATH: /workspace
+      PYTHONDONTWRITEBYTECODE: "1"
+      PUBLIC_BASE_URL: http://127.0.0.1:8003
+      PUBLIC_APP_BASE_URL: http://127.0.0.1:4194
+      CORS_ALLOW_ORIGINS: http://127.0.0.1:4194
+      EMAIL_ENABLED: "false"
+      WHATSAPP_ENABLED: "false"
+      WHATSAPP_FALLBACK_TO_EMAIL: "false"
+      AI_ENABLED: "false"
+      AI_ACTIONS_ENABLED: "false"
+      OPENAI_API_KEY: ""
+      SMTP_PASSWORD: ""
+      TWILIO_ACCOUNT_SID: ""
+      TWILIO_AUTH_TOKEN: ""
+      PLATFORM_API_TOKEN: ""
+      SYNC_ALERT_WEBHOOK_URL: ""
+      PLAN_ALERT_WEBHOOK_URL: ""
+    volumes:
+      - ${DIMAX_COMMERCIAL_SOURCE:?Set the clean source snapshot}:/workspace:ro
+      - ./commercial-runtime.py:/acceptance/check.py:ro
+      - ${DIMAX_COMMERCIAL_PROOF:?Set the disposable proof directory}:/proof
+    networks: [isolated]
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [python, -m, uvicorn, app.main:app, --host, 0.0.0.0, --port, "8000", --no-access-log]
+  gateway:
+    image: caddy:2.11.4-alpine
+    mem_limit: 128m
+    volumes:
+      - ./commercial-runtime.Caddyfile:/etc/caddy/Caddyfile:ro
+    ports: [127.0.0.1:8003:8000]
+    networks: [isolated, ingress]
+    depends_on: [api]
+networks:
+  isolated:
+    internal: true
+  ingress:
