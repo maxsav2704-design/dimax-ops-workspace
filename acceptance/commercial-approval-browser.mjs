@@ -51,7 +51,9 @@ try {
   await page.getByRole('button', { name: 'Review latest versions' }).click();
   await page.getByRole('button', { name: 'Send to factory', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('Acceptance entrance', { exact: true })).toBeVisible();
+  const installationRow = (scope) => scope.getByRole('row').filter({ hasText: 'Acceptance entrance' });
+  await expect(installationRow(dialog)).toHaveCount(1);
+  await expect(installationRow(dialog)).toContainText('400.50');
   await expect(dialog.getByRole('button', { name: 'Send to factory' })).toBeDisabled();
   await dialog.getByRole('checkbox').check();
   const invitationResponse = page.waitForResponse((response) =>
@@ -76,7 +78,8 @@ try {
   factory.on('pageerror', (error) => errors.push(error.message));
   await factory.goto(UI + '/commercial-approval#' + token, { waitUntil: 'domcontentloaded' });
   await expect(factory.locator('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer');
-  await expect(factory.getByText('Acceptance entrance', { exact: true })).toBeVisible();
+  await expect(installationRow(factory)).toHaveCount(1);
+  await expect(installationRow(factory)).toContainText('400.50');
   await expect(factory.getByRole('button', { name: 'Confirm both versions' })).toBeDisabled();
   assert.equal(new URL(factory.url()).hash, '');
   await factory.screenshot({ path: resolve(proof, 'approval-public-en-review.png'), fullPage: true });
@@ -143,7 +146,8 @@ try {
     .getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(page.getByText('Confirmed', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'View exact versions' }).click();
-  await expect(page.getByRole('dialog').getByText('Acceptance entrance', { exact: true })).toBeVisible();
+  await expect(installationRow(page.getByRole('dialog'))).toHaveCount(1);
+  await expect(installationRow(page.getByRole('dialog'))).toContainText('400.50');
   assert.deepEqual(errors, []); assert.deepEqual(denied, []);
   capture('verify');
   console.log('PASS: factory mailbox decision, admin receipt, RU390/HE768 and exact-version history');
