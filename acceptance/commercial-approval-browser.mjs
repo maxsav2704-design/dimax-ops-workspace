@@ -101,7 +101,7 @@ try {
   const rejected = factory.waitForResponse((response) => response.url() === API + '/api/v1/public/commercial-approvals/confirm');
   await factory.getByRole('button', { name: 'Confirm both versions' }).click();
   assert.equal((await rejected).status(), 403);
-  await expect(factory.getByRole('alert')).toContainText('Code incorrect or expired');
+  await expect(factory.getByRole('main').getByRole('alert')).toContainText('Code incorrect or expired');
   await factory.getByLabel('Code from email').fill(code);
   const confirmed = factory.waitForResponse((response) => response.url() === API + '/api/v1/public/commercial-approvals/confirm');
   await factory.getByRole('button', { name: 'Confirm both versions' }).click();
