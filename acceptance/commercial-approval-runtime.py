@@ -42,8 +42,22 @@ def guard():
 def prepare():
     base.seed()
     fixture = json.loads((PROOF / 'private-session.json').read_text())
+    tokens = {}
     with httpx.Client(timeout=90) as client:
-        base.login(client, fixture, 'OWNER')
+        # Authenticate each role once. Keep the deployed five-logins/15min limiter.
+        for scope in ('OWNER', 'OPERATIONS', 'FINANCE', 'VIEWER', 'INSTALLER'):
+            base.login(client, fixture, scope)
+            tokens[scope] = client.headers['Authorization'].removeprefix('Bearer ')
+        # The separate tenant uses the same ordinary gateway as browser clients;
+        # no forwarded-IP spoofing or test-issued JWTs are used.
+        with httpx.Client(timeout=90) as foreign:
+            user = fixture['users']['FOREIGN']
+            response = foreign.post('http://gateway:8000/api/v1/auth/login', json={
+                'company_id': user['company_id'], 'email': user['email'],
+                'password': fixture['password'], 'device_id': 'commercial-runtime-FOREIGN'})
+            assert response.status_code == 200, response.status_code
+            tokens['FOREIGN'] = response.json()['access_token']
+        client.headers['Authorization'] = 'Bearer ' + tokens['OWNER']
         def post(path, body):
             result = client.post(API + path, json=body)
             assert result.status_code == 200, result.text
@@ -63,7 +77,7 @@ def prepare():
         post('/admin/price-lists/factory/contact', {'expected_contact_id': None, 'factory_name': 'Synthetic factory',
             'recipient_name': 'Synthetic Representative', 'recipient_email': 'factory@commercial.example.com',
             'authority_reference': 'Synthetic OWNER-approved authority'})
-    (PROOF / 'private-approval.json').write_text(json.dumps({'contract': contract, 'terms': terms, 'price': price}))
+    (PROOF / 'private-approval.json').write_text(json.dumps({'tokens': tokens, 'contract': contract, 'terms': terms, 'price': price}))
     print('PASS: synthetic versions prepared through real JWT/API; installer baseline unchanged')
 
 
@@ -127,7 +141,7 @@ def verify():
     saved = json.loads((PROOF / 'private-approval.json').read_text())
     path = base.CONTRACTS + '/' + saved['contract']['id']
     with httpx.Client(timeout=90) as client:
-        base.login(client, fixture, 'OWNER')
+        client.headers['Authorization'] = 'Bearer ' + saved['tokens']['OWNER']
         result = client.get(API + path + '/approvals')
         assert result.status_code == 200, result.text
         rows = result.json()['items']
@@ -139,7 +153,7 @@ def verify():
         if os.environ.get('DIMAX_COMMERCIAL_MAILPIT') == '1':
             assert row['delivery_status'] == 'SENT'
         for scope in ('OPERATIONS', 'FINANCE', 'VIEWER', 'INSTALLER', 'FOREIGN'):
-            base.login(client, fixture, scope)
+            client.headers['Authorization'] = 'Bearer ' + saved['tokens'][scope]
             assert client.get(API + path + '/approvals').status_code == (404 if scope == 'FOREIGN' else 403)
         client.headers.clear()
         assert client.get(API + path + '/approvals').status_code == 401
