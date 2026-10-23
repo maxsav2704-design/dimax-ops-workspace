@@ -42,16 +42,8 @@ def guard():
 def prepare():
     base.seed()
     fixture = json.loads((PROOF / 'private-session.json').read_text())
-    tokens = {}
     with httpx.Client(timeout=90) as client:
-        for scope in ('OWNER', 'OPERATIONS', 'FINANCE', 'VIEWER', 'INSTALLER', 'FOREIGN'):
-            user = fixture['users'][scope]
-            result = client.post(API + '/auth/login', json={
-                'company_id': user['company_id'], 'email': user['email'], 'password': fixture['password'],
-                'device_id': 'commercial-approval-runtime-' + scope})
-            assert result.status_code == 200, result.status_code
-            tokens[scope] = result.json()['access_token']
-        client.headers['Authorization'] = 'Bearer ' + tokens['OWNER']
+        base.login(client, fixture, 'OWNER')
         def post(path, body):
             result = client.post(API + path, json=body)
             assert result.status_code == 200, result.text
@@ -71,7 +63,7 @@ def prepare():
         post('/admin/price-lists/factory/contact', {'expected_contact_id': None, 'factory_name': 'Synthetic factory',
             'recipient_name': 'Synthetic Representative', 'recipient_email': 'factory@commercial.example.com',
             'authority_reference': 'Synthetic OWNER-approved authority'})
-    (PROOF / 'private-approval.json').write_text(json.dumps({'tokens': tokens, 'contract': contract, 'terms': terms, 'price': price}))
+    (PROOF / 'private-approval.json').write_text(json.dumps({'contract': contract, 'terms': terms, 'price': price}))
     print('PASS: synthetic versions prepared through real JWT/API; installer baseline unchanged')
 
 

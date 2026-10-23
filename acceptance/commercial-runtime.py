@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import secrets
 import sys
+import time
 from uuid import UUID, uuid4
 
 import httpx
@@ -127,11 +128,19 @@ def request(client, method, path, body=None, expected=200):
 
 def login(client, fixture, scope):
     actor = fixture['users'][scope]
-    result = request(client, 'POST', '/auth/login', {
+    body = {
         'company_id': actor['company_id'], 'email': actor['email'],
         'password': fixture['password'], 'device_id': 'commercial-runtime-' + scope,
-    })
-    client.headers['Authorization'] = 'Bearer ' + result['access_token']
+    }
+    response = client.post(API + '/auth/login', json=body)
+    if response.status_code == 429:
+        # Real role checks share one IP; respect the deployed limiter instead of disabling it.
+        window = settings.AUTH_LOGIN_RL_WINDOW_SEC
+        assert 0 < window <= 120, 'Unexpected acceptance login rate-limit window'
+        time.sleep(window + 1)
+        response = client.post(API + '/auth/login', json=body)
+    assert response.status_code == 200, f'Login for {scope}: HTTP {response.status_code}'
+    client.headers['Authorization'] = 'Bearer ' + response.json()['access_token']
 
 
 def verify(persisted=False):
