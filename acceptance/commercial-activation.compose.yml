@@ -1,0 +1,6 @@
+# Overlay on top of commercial-runtime.compose.yml + commercial-approval.compose.yml: switches the
+# activation stage (0087) on for the disposable acceptance API only. Never a working deployment.
+services:
+  api:
+    environment:
+      COMMERCIAL_ACTIVATION_ENABLED: "true"
