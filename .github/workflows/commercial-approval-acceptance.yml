@@ -76,7 +76,7 @@ jobs:
             -e TEST_DATABASE_URL=postgresql+psycopg2://postgres:commercial-disposable-only@db:5432/dimax_acceptance_tests \
             -e EMAIL_ENABLED=false api sh -ec '
               alembic upgrade head
-              python -m pytest -q --junitxml=/proof/regression.xml \
+              python -m pytest -q -o cache_dir=/tmp/pytest-cache --junitxml=/proof/regression.xml \
                 tests/integration/test_work_price_accruals.py \
                 tests/integration/test_work_price_approvals.py \
                 tests/integration/test_work_price_proposals.py \
@@ -89,7 +89,22 @@ jobs:
           assert counts == {'tests': 119, 'failures': 0, 'errors': 0, 'skipped': 0}, counts
           pathlib.Path('evidence/regression-summary.json').write_text(json.dumps(counts, indent=2))
           PY
+      - name: Install locked admin dependencies
+        timeout-minutes: 6
+        working-directory: dimax-operations-suite-main
+        run: npm ci
+      - name: Build standalone admin with supported Node 20
+        timeout-minutes: 8
+        working-directory: dimax-operations-suite-main
+        run: npm run build
+      - name: Install Chromium
+        timeout-minutes: 5
+        working-directory: dimax-operations-suite-main
+        # Use runner system libraries; do not upgrade Ubuntu through a slow mirror.
+        # Playwright still validates required libraries when launching the browser.
+        run: npx playwright install --only-shell chromium
       - name: Start fresh browser API and prepare synthetic versions
+        timeout-minutes: 5
         run: |
           docker compose up -d api gateway
           curl --fail --silent --max-time 5 --retry 45 --retry-all-errors --retry-delay 2 --retry-max-time 180 http://127.0.0.1:8003/ready
@@ -97,12 +112,10 @@ jobs:
           sudo chown -R "$(id -u):10001" runtime-private
           # Share only with the container's unprivileged group, not all users.
           chmod 2770 runtime-private
-      - name: Build standalone admin with supported Node 20
+      - name: Start standalone admin
+        timeout-minutes: 3
         working-directory: dimax-operations-suite-main
         run: |
-          npm ci
-          npm run build
-          npx playwright install --with-deps chromium
           cp -r public .next/standalone/public
           mkdir -p .next/standalone/.next
           cp -r .next/static .next/standalone/.next/static
@@ -113,8 +126,10 @@ jobs:
           done
           exit 1
       - name: Browser invitation, real SMTP, factory decision and access guards
+        timeout-minutes: 8
         run: node acceptance/commercial-approval-browser.mjs
       - name: Verify persistence and protected downgrade
+        timeout-minutes: 4
         run: |
           docker compose restart api
           curl --fail --silent --max-time 5 --retry 45 --retry-all-errors --retry-delay 2 --retry-max-time 180 http://127.0.0.1:8003/ready
