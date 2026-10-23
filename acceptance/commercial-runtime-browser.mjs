@@ -57,7 +57,7 @@ try {
   console.log('Real login accepted');
   const token = (await login.json()).access_token;
   api = await request.newContext({ baseURL: API, extraHTTPHeaders: { Authorization: 'Bearer ' + token } });
-  await expect(page.getByRole('heading', { level: 1, name: 'Factory settlements' })).toBeVisible({ timeout: 60000 });
+  await expect(page.getByRole('heading', { level: 1, name: 'Contracts & billing' })).toBeVisible({ timeout: 60000 });
   console.log('Commercial page visible');
 
   async function save(url) {
@@ -129,7 +129,7 @@ try {
   }
   // A full reload proves the records come from PostgreSQL through the deployed API.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('heading', { level: 1, name: 'Factory settlements' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Contracts & billing' })).toBeVisible();
   const selector = page.getByRole('combobox', { name: 'Price versions' });
   await expect(selector).toHaveValue(proof.race_price.id);
   await selector.selectOption(proof.prices[0].id);
@@ -138,7 +138,7 @@ try {
   assert.equal(original.status(), 200);
   assert.deepEqual(await original.json(), proof.prices[0]);
   await page.getByRole('button', { name: 'RU', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Расчёты с заводом' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Договоры и оплаты' })).toBeVisible();
   await page.screenshot({ path: resolve(output, persisted ? 'persisted-ru.png' : 'live-ru.png'), fullPage: true });
   if (process.argv.includes('--terms')) await checkTerms({ page, api, contract: proof.contract, save, expect, output, persisted });
   assert.deepEqual(deniedRequests, []);
