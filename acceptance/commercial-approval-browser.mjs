@@ -63,7 +63,7 @@ try {
   for (const key of ['token', 'verification_code', 'approval_url', 'secret']) assert.equal(key in invitation, false);
   await expect(dialog).toBeHidden();
   await expect(page.getByText('Awaiting factory', { exact: true })).toBeVisible();
-  await page.screenshot({ path: resolve(proof, 'approval-admin-en.png'), fullPage: true });
+  await page.screenshot({ path: resolve(proof, 'approval-admin-en.png'), fullPage: true, animations: 'disabled' });
   console.log('PASS: real admin review and invitation, no recipient or price override');
   capture('link');
   const { token } = JSON.parse(await readFile(resolve(proof, 'private-link.json'), 'utf8'));
@@ -82,12 +82,14 @@ try {
   await expect(installationRow(factory)).toContainText('400.50');
   await expect(factory.getByRole('button', { name: 'Confirm both versions' })).toBeDisabled();
   assert.equal(new URL(factory.url()).hash, '');
-  await factory.screenshot({ path: resolve(proof, 'approval-public-en-review.png'), fullPage: true });
+  await factory.screenshot({ path: resolve(proof, 'approval-public-en-review.png'), fullPage: true, animations: 'disabled' });
   await factory.setViewportSize({ width: 390, height: 844 });
   await factory.getByRole('button', { name: 'Русский', exact: true }).click();
+  await expect(factory.getByRole('button', { name: 'Русский', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(factory.getByRole('button', { name: 'English', exact: true })).toHaveAttribute('aria-pressed', 'false');
   await expect(factory.getByRole('button', { name: 'Подтвердить обе версии' })).toBeDisabled();
   await expect.poll(() => factory.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await factory.screenshot({ path: resolve(proof, 'approval-public-ru-form-390.png'), fullPage: true });
+  await factory.screenshot({ path: resolve(proof, 'approval-public-ru-form-390.png'), fullPage: true, animations: 'disabled' });
   await factory.getByRole('button', { name: 'English', exact: true }).click();
   await factory.setViewportSize({ width: 1440, height: 1000 });
   await factory.getByRole('button', { name: 'Email a verification code' }).click();
@@ -136,12 +138,15 @@ try {
   await factory.getByRole('button', { name: 'Русский', exact: true }).click();
   await expect(factory.getByRole('heading', { name: 'Согласование коммерческого договора' })).toBeVisible();
   await expect.poll(() => factory.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await factory.screenshot({ path: resolve(proof, 'approval-public-ru-390.png'), fullPage: true });
+  await expect(factory.getByRole('button', { name: 'Русский', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await factory.screenshot({ path: resolve(proof, 'approval-public-ru-390.png'), fullPage: true, animations: 'disabled' });
   await factory.setViewportSize({ width: 768, height: 1024 });
   await factory.getByRole('button', { name: 'עברית', exact: true }).click();
+  await expect(factory.getByRole('button', { name: 'עברית', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(factory.getByRole('button', { name: 'Русский', exact: true })).toHaveAttribute('aria-pressed', 'false');
   await expect(factory.getByRole('main')).toHaveAttribute('dir', 'rtl');
   await expect.poll(() => factory.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await factory.screenshot({ path: resolve(proof, 'approval-public-he-768.png'), fullPage: true });
+  await factory.screenshot({ path: resolve(proof, 'approval-public-he-768.png'), fullPage: true, animations: 'disabled' });
   await page.getByRole('region', { name: 'Factory confirmation', exact: true })
     .getByRole('button', { name: 'Refresh', exact: true }).click();
   await expect(page.getByText('Confirmed', { exact: true })).toBeVisible();
