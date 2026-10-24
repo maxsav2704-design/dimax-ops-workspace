@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 spec = importlib.util.spec_from_file_location('restore_browser_runner', Path(__file__).with_name('run.py'))
 runner = importlib.util.module_from_spec(spec)
@@ -34,6 +36,21 @@ class SafetyTests(unittest.TestCase):
     def test_low_memory_rejected_without_touching_services(self):
         with self.assertRaises(ValueError):
             runner.validate_inputs(self.env, self.refs, self.images, 508)
+
+    def test_database_readiness_waits_for_tcp_not_initdb_socket(self):
+        docker = Mock(side_effect=[SimpleNamespace(returncode=1), SimpleNamespace(returncode=0)])
+        with patch.object(runner.time, 'sleep') as sleep:
+            runner.wait_database(docker, 'owned-test-db', 'dimax_full_restored')
+        self.assertEqual(docker.call_count, 2)
+        docker.assert_called_with('exec', 'owned-test-db', 'pg_isready', '-h', '127.0.0.1',
+                                  '-U', 'postgres', '-d', 'dimax_full_restored', check=False)
+        sleep.assert_called_once_with(1)
+
+    def test_database_readiness_has_bounded_timeout(self):
+        docker = Mock(return_value=SimpleNamespace(returncode=1))
+        with patch.object(runner.time, 'sleep'), self.assertRaises(RuntimeError):
+            runner.wait_database(docker, 'owned-test-db', 'dimax_full_restored')
+        self.assertEqual(docker.call_count, 60)
 
 
 if __name__ == '__main__':

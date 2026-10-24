@@ -41,6 +41,16 @@ def wait_http(url):
     raise RuntimeError('Isolated HTTP service did not become ready: ' + url)
 
 
+def wait_database(docker, name, database):
+    # The image's temporary initdb server accepts Unix sockets, but not TCP.
+    for _ in range(60):
+        if docker('exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'postgres',
+                  '-d', database, check=False).returncode == 0:
+            return
+        time.sleep(1)
+    raise RuntimeError('Isolated PostgreSQL not ready')
+
+
 def exercise(temporary, resources, images, helpers):
     docker, freeze_sources, label_key = helpers
     source, work = temporary / 'source', temporary / 'work'
@@ -73,11 +83,8 @@ def exercise(temporary, resources, images, helpers):
             '--env', f'POSTGRES_DB={name}', '--env', 'POSTGRES_PASSWORD=synthetic-local-only',
             '--env', 'POSTGRES_INITDB_ARGS=--encoding=UTF8 --locale=C'],
             ['postgres', '-c', 'shared_buffers=16MB', '-c', 'max_connections=24', '-c', 'work_mem=1MB'])
-        for _ in range(60):
-            if docker('exec', pg, 'pg_isready', '-U', 'postgres', '-d', name, check=False).returncode == 0:
-                return pg, data
-            time.sleep(1)
-        raise RuntimeError('Isolated PostgreSQL not ready')
+        wait_database(docker, pg, name)
+        return pg, data
 
     def storage(suffix):
         data = volume(suffix + '-data')
