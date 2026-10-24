@@ -1,8 +1,11 @@
 """CI-only disaster rehearsal using owned, disposable resources and pinned code."""
 import argparse
+from ipaddress import IPv4Address
+import json
 from pathlib import Path
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -30,15 +33,23 @@ def validate_inputs(environ, revisions, images, available):
 
 
 def wait_http(url):
+    last_error = None
     for _ in range(90):
         try:
             with urlopen(url, timeout=3) as response:
                 if response.status == 200:
                     return
-        except OSError:
-            pass
+        except OSError as error:
+            last_error = error
         time.sleep(1)
-    raise RuntimeError('Isolated HTTP service did not become ready: ' + url)
+    raise RuntimeError('Isolated HTTP service did not become ready: ' + url) from last_error
+
+
+def bridge_address(inspected, network):
+    address = IPv4Address(inspected['NetworkSettings']['Networks'][network]['IPAddress'])
+    if not address.is_private or address.is_loopback or address.is_link_local or address.is_unspecified:
+        raise ValueError('Only the owned private bridge address may be forwarded')
+    return str(address)
 
 
 def wait_database(docker, name, database):
@@ -97,7 +108,7 @@ def exercise(temporary, resources, images, helpers):
             '--env', 'GOMEMLIMIT=192MiB', '--env', 'MINIO_BROWSER=off'], ['server', '/data', '--address', ':9000'])
         return name, data
 
-    def app(suffix, db, script, args, *, restored=False, ports=()):
+    def app(suffix, db, script, args, *, restored=False):
         env = {'DIMAX_FULL_RESTORE': 'synthetic-only', 'DIMAX_OUTBOX_RESTORE': 'synthetic-only',
             'DIMAX_RESTORE_BROWSER': 'synthetic-only', 'APP_ENV': 'test',
             'DATABASE_URL': f'postgresql+psycopg2://postgres:synthetic-local-only@recovery-db:5432/{db}',
@@ -114,8 +125,6 @@ def exercise(temporary, resources, images, helpers):
             '--workdir', '/probe', '--entrypoint', 'python', '--tmpfs', '/tmp:rw,nosuid,size=64m',
             '--mount', f'type=bind,source={source},target=/probe,readonly',
             '--mount', f'type=bind,source={work},target=/work']
-        for value in ports:
-            options += ['--publish', value]
         for key, value in env.items():
             options += ['--env', f'{key}={value}']
         return container(suffix, images[1], options, ['-B', script, *args])
@@ -151,14 +160,29 @@ def exercise(temporary, resources, images, helpers):
     job('verify-db', 'dimax_full_restored')
     storage('restored-storage')
     job('restore-pdf', 'dimax_full_restored')
-    api = app('api', 'dimax_full_restored', '-m', ['uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', '8000'], restored=True, ports=['127.0.0.1:18090:8000'])
-    observer = app('smtp-observer', 'dimax_full_restored', 'browser_probe.py', ['serve'], restored=True, ports=['127.0.0.1:18091:8081'])
+    api = app('api', 'dimax_full_restored', '-m', ['uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', '8000'], restored=True)
+    observer = app('smtp-observer', 'dimax_full_restored', 'browser_probe.py', ['serve'], restored=True)
+    relays = []
     try:
+        # Internal Docker networks need a host-side loopback relay, not published ports.
+        for name, local_port, remote_port in ((api, 18090, 8000), (observer, 18091, 8081)):
+            if not resources.owns('container', name):
+                raise RuntimeError('Cannot forward an unowned container')
+            inspected = json.loads(docker('container', 'inspect', name).stdout)[0]
+            address = bridge_address(inspected, network)
+            relays.append(subprocess.Popen([
+                'socat', f'TCP4-LISTEN:{local_port},bind=127.0.0.1,fork,reuseaddr',
+                f'TCP4:{address}:{remote_port}',
+            ], start_new_session=True))
         wait_http('http://127.0.0.1:18090/health')
         wait_http('http://127.0.0.1:18091/ready')
         subprocess.run(['node', str(Path(__file__).with_name('browser.mjs')), str(work)], check=True, timeout=420)
         shutil.copyfile(work / 'browser-result.json', ROOT / 'evidence/restore-browser-result.json')
     finally:
+        for relay in relays:
+            if relay.poll() is None:
+                os.killpg(relay.pid, signal.SIGTERM)
+            relay.wait(timeout=10)
         for name in (api, observer):
             logs = docker('logs', name, check=False)
             print((logs.stdout + logs.stderr).decode(errors='replace')[-16000:], flush=True)

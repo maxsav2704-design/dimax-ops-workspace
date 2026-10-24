@@ -67,6 +67,8 @@ jobs:
           npm ci
           npm run build
           npx playwright install --with-deps chromium
+      - name: Install loopback-only bridge utility
+        run: sudo apt-get install -y socat
       - name: Start standalone admin on runner loopback
         working-directory: inputs/frontend
         run: |

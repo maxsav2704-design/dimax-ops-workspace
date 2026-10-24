@@ -52,6 +52,16 @@ class SafetyTests(unittest.TestCase):
             runner.wait_database(docker, 'owned-test-db', 'dimax_full_restored')
         self.assertEqual(docker.call_count, 60)
 
+    def test_forwarding_uses_only_selected_private_network(self):
+        inspected = {'NetworkSettings': {'Networks': {'owned': {'IPAddress': '172.19.0.4'}}}}
+        self.assertEqual(runner.bridge_address(inspected, 'owned'), '172.19.0.4')
+        with self.assertRaises(KeyError):
+            runner.bridge_address(inspected, 'unrelated')
+        for address in ('8.8.8.8', '127.0.0.1', '169.254.1.1', '0.0.0.0', '', '::1'):
+            inspected['NetworkSettings']['Networks']['owned']['IPAddress'] = address
+            with self.subTest(address=address), self.assertRaises(ValueError):
+                runner.bridge_address(inspected, 'owned')
+
 
 if __name__ == '__main__':
     unittest.main()
