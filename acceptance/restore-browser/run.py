@@ -57,6 +57,8 @@ def exercise(temporary, resources, images, helpers):
     source.mkdir()
     work.mkdir()
     freeze_sources(BACKEND, source, resume_outbox=True)
+    # The API startup guard imports this script; the worker-only snapshot omits it.
+    shutil.copyfile(BACKEND / 'scripts/validate_production_env.py', source / 'scripts/validate_production_env.py')
     shutil.copyfile(Path(__file__).with_name('probe.py'), source / 'browser_probe.py')
     labels = ['--label', f'{label_key}={resources.run_id}']
     network = resources.reserve('network', 'network')
