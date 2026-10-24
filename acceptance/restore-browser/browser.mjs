@@ -110,7 +110,9 @@ try {
   await dialog.getByRole('button', { name: 'Record decision', exact: true }).click();
   const retry = dialog.getByRole('button', { name: 'Retry the same decision', exact: true });
   await expect(retry).toBeEnabled({ timeout: 15000 });
-  await expect(dialog.getByLabel('Reason', { exact: true })).toBeDisabled();
+  await expect(dialog.locator('textarea')).toHaveCount(1);
+  await expect(dialog.locator('textarea')).toBeDisabled();
+  await expect(dialog.locator('textarea')).toHaveValue('Synthetic restore: original provider capture reconciled');
   await retry.click();
   await expect(dialog).toBeHidden();
   const delivered = await control('tick', 1);
@@ -123,6 +125,16 @@ try {
   assert(writes.every(url => url.startsWith(prefix) || url.startsWith('/api/v1/auth/')), 'Unexpected business endpoint write');
   assert.deepEqual(failures, []);
   console.log('PASS: browser OWNER reviews/release, held retry, lost-response idempotency, exact restored PDF, zero business writes');
+} catch (error) {
+  const diagnostics = [];
+  for (const [index, context] of contexts.entries()) {
+    const page = context.pages()[0];
+    if (!page || page.isClosed()) continue;
+    await page.screenshot({ path: `evidence/restore-failure-${index + 1}.png`, fullPage: true });
+    diagnostics.push({ url: page.url(), dialogs: await page.getByRole('dialog').evaluateAll(elements => elements.map(element => element.outerHTML)) });
+  }
+  fs.writeFileSync('evidence/browser-failure.json', JSON.stringify({ error: String(error), failures, diagnostics }, null, 2));
+  throw error;
 } finally {
   for (const context of contexts) await context.close();
   await browser.close();
