@@ -1,0 +1,98 @@
+name: Full Restore Browser Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/restore-browser-20261024]
+    paths:
+      - '.github/workflows/restore-browser-acceptance.yml'
+      - 'acceptance/restore-browser/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-browser-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-restore-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DIMAX_RESTORE_BROWSER: synthetic-only
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:18090
+      NEXT_TELEMETRY_DISABLED: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-backend
+          ref: ee10b44c08d1dd175d6bc49ed14b64cc77cb0613
+          path: inputs/backend
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-frontend
+          ref: a2ace1ac35129968c2639bf1b6ab181af12c9b39
+          path: inputs/frontend
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: maxsav2704-design/dimax-ops-workspace
+          ref: 971cc0ff5bf1af58cc3823aab4159adc399400d4
+          path: inputs/infra
+          sparse-checkout: infra/minio
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify safety guards and syntax
+        run: |
+          python -B -m unittest discover -s acceptance/restore-browser -p 'test_*.py' -v
+          python -B -c "import ast,pathlib; [ast.parse(p.read_text()) for p in pathlib.Path('acceptance/restore-browser').glob('*.py')]"
+          node --check acceptance/restore-browser/browser.mjs
+          mkdir evidence
+      - name: Build isolated images from pinned sources
+        run: |
+          docker pull postgres:16.12-alpine
+          docker build -t dimax-browser-restore-app inputs/backend
+          docker build --target server -t dimax-browser-restore-storage -f inputs/infra/infra/minio/Dockerfile inputs/infra/infra/minio
+      - name: Build verified admin revision
+        working-directory: inputs/frontend
+        run: |
+          npm ci
+          npm run build
+          npx playwright install --with-deps chromium
+      - name: Start standalone admin on runner loopback
+        working-directory: inputs/frontend
+        run: |
+          cp -r public .next/standalone/public
+          mkdir -p .next/standalone/.next
+          cp -r .next/static .next/standalone/.next/static
+          HOSTNAME=127.0.0.1 PORT=4196 nohup node .next/standalone/server.js > "$RUNNER_TEMP/restore-admin.log" 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4196/login > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Restore full schema and PDFs, reconcile in browser, send only authorized mail
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B acceptance/restore-browser/run.py \
+            --postgres-image "$(docker image inspect postgres:16.12-alpine --format '{{.Id}}')" \
+            --app-image "$(docker image inspect dimax-browser-restore-app --format '{{.Id}}')" \
+            --storage-image "$(docker image inspect dimax-browser-restore-storage --format '{{.Id}}')" \
+            2>&1 | tee evidence/restore-browser.log
+      - name: Retain synthetic summaries and screenshots only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-browser-evidence
+          path: evidence/
+          if-no-files-found: ignore
+          retention-days: 7
