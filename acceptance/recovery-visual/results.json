@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-24",
+  "scope": "Browser inspection of real recovery React components with in-memory synthetic API responses; not an end-to-end backend test",
+  "source_sha256": "c1460d07ea3b0bda7a0c317244a6a79c12ba64824984fbbdcff7bb2157d14055",
+  "production_changes": false,
+  "claude_source_edits": false,
+  "database_connections": false,
+  "external_delivery": false,
+  "service_restoration": {
+    "import_inbox": "running",
+    "ai": "running",
+    "sync_gc": "running",
+    "maintenance": "running",
+    "outbox": "stopped by explicit user decision after restoration exposed missing outbox_recoveries table",
+    "database_migrations_executed": false
+  },
+  "checked_in_browser": [
+    "OWNER: resume disabled with one unresolved message",
+    "Decision: reason, evidence and explicit confirmation required",
+    "HOLD remains visible after synthetic queue release",
+    "409 conflict: form locked and operator instructed to refresh",
+    "Lost response after simulated commit: original fields locked, same-decision retry offered",
+    "After same-decision retry: exactly one history article",
+    "OPERATIONS: review available, resume control absent",
+    "FINANCE and INSTALLER: no message data or decision form",
+    "Unavailable API: error visible, decisions and resume hidden",
+    "Final page: no horizontal overflow; body pointer-events auto",
+    "Browser console: no error or warning entries"
+  ],
+  "automated_fixture_tests": { "passed": 4, "failed": 0 },
+  "limitations": [
+    "No new real backend, tenant-isolation or SMTP verification in this run",
+    "Full isolated stack not started due to available host RAM below safe threshold",
+    "Next routing and session are test adapters; navigation outside recovery is disabled",
+    "Font loader is not included; local system sans-serif fallback is used",
+    "Mock is fault injection, not a replacement for backend authorization or idempotency tests",
+    "Visual checks were Russian; other languages were not exercised in this run"
+  ],
+  "commands": [
+    "node --test acceptance/recovery-visual/mock.test.mjs",
+    "node --check acceptance/recovery-visual/run.mjs",
+    "node --max-old-space-size=256 acceptance/recovery-visual/run.mjs"
+  ],
+  "execution_note": "Build succeeded. Sandbox-hosted listener was unreachable from browser, so compiled assets were temporarily served by a loopback-only Python static server. Final runner includes a 768 MiB pre-build guard."
+}

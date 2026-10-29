@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -29,10 +30,13 @@ def guard():
     assert settings.EMAIL_ENABLED and not settings.WHATSAPP_ENABLED and not settings.AI_ENABLED
     assert settings.PUBLIC_APP_BASE_URL == 'https://commercial.example.com'
     assert not Path('/workspace/.env').exists()
+    if os.environ.get('DIMAX_COMMERCIAL_MAILPIT') == '1':
+        assert settings.SMTP_HOST == 'mailpit' and settings.SMTP_PORT == 1025
+        assert not settings.SMTP_TLS and not settings.SMTP_USER and not settings.SMTP_PASSWORD
     import_all_orm_models()
     with SessionLocal() as db:
         assert db.scalar(text('SELECT current_database()')) == url.database
-        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0087_commercial_agreements'  # head after the activation stage
+        base.assert_schema_head(db)
 
 
 def prepare():
@@ -40,13 +44,19 @@ def prepare():
     fixture = json.loads((PROOF / 'private-session.json').read_text())
     tokens = {}
     with httpx.Client(timeout=90) as client:
-        for scope in ('OWNER', 'OPERATIONS', 'INSTALLER', 'FOREIGN'):
-            user = fixture['users'][scope]
-            result = client.post(API + '/auth/login', json={
-                'company_id': user['company_id'], 'email': user['email'], 'password': fixture['password'],
-                'device_id': 'commercial-approval-runtime-' + scope})
-            assert result.status_code == 200, result.status_code
-            tokens[scope] = result.json()['access_token']
+        # Authenticate each role once. Keep the deployed five-logins/15min limiter.
+        for scope in ('OWNER', 'OPERATIONS', 'FINANCE', 'VIEWER', 'INSTALLER'):
+            base.login(client, fixture, scope)
+            tokens[scope] = client.headers['Authorization'].removeprefix('Bearer ')
+        # The separate tenant uses the same ordinary gateway as browser clients;
+        # no forwarded-IP spoofing or test-issued JWTs are used.
+        with httpx.Client(timeout=90) as foreign:
+            user = fixture['users']['FOREIGN']
+            response = foreign.post('http://gateway:8000/api/v1/auth/login', json={
+                'company_id': user['company_id'], 'email': user['email'],
+                'password': fixture['password'], 'device_id': 'commercial-runtime-FOREIGN'})
+            assert response.status_code == 200, response.status_code
+            tokens['FOREIGN'] = response.json()['access_token']
         client.headers['Authorization'] = 'Bearer ' + tokens['OWNER']
         def post(path, body):
             result = client.post(API + path, json=body)
@@ -85,14 +95,45 @@ def capture(code=False):
         kind = CODE_KIND if code else KIND
         msg = next(row for row in messages if row.payload.get('kind') == kind
                    and row.payload.get('approval_id') == str(approval.id))
-        sender = CaptureSender()
-        deliver(msg, sender)
-        assert sender.message['to_email'] == 'factory@commercial.example.com'
-        assert 'TEST ONLY' in sender.message['body_text']
-        value = re.search(r'Confirmation code: (\d{6})', sender.message['body_text']).group(1) if code else re.search(
-            r'https://commercial.example.com/commercial-approval#([A-Za-z0-9_-]{43})', sender.message['body_text']).group(1)
+        pattern = r'Confirmation code: (\d{6})' if code else r'https://commercial.example.com/commercial-approval#([A-Za-z0-9_-]{43})'
+        if os.environ.get('DIMAX_COMMERCIAL_MAILPIT') == '1':
+            from app.modules.outbox.domain.enums import OutboxStatus
+            from app.workers import outbox_worker
+            assert outbox_worker.run_once() == 1
+            db.refresh(msg)
+            assert msg.status == OutboxStatus.SENT and msg.sent_at and not msg.last_error
+            received = []
+            deadline = time.monotonic() + 15
+            with httpx.Client(base_url='http://mailpit:8025/api/v1/', timeout=15) as client:
+                while time.monotonic() < deadline:
+                    response = client.get('messages?limit=100')
+                    response.raise_for_status()
+                    for row in response.json()['messages']:
+                        if [recipient['Address'] for recipient in row['To']] != ['factory@commercial.example.com']:
+                            continue
+                        message = client.get('message/' + row['ID'])
+                        message.raise_for_status()
+                        body = message.json()
+                        if re.search(pattern, body['Text']):
+                            received.append(body)
+                    if received:
+                        break
+                    time.sleep(0.2)
+            assert len(received) == 1, 'Exactly one SMTP message for this step required'
+            body_text = received[0]['Text']
+            assert 'TEST ONLY' in received[0]['HTML']
+        else:
+            sender = CaptureSender()
+            deliver(msg, sender)
+            assert sender.message['to_email'] == 'factory@commercial.example.com'
+            body_text = sender.message['body_text']
+        assert 'TEST ONLY' in body_text
+        if code:
+            assert '/commercial-approval#' not in body_text
+        value = re.search(pattern, body_text).group(1)
         (PROOF / ('private-code.json' if code else 'private-link.json')).write_text(json.dumps({'code' if code else 'token': value}))
-    print('PASS: encrypted outbox rendered to local capture; no email sent externally')
+    channel = 'real outbox worker and isolated SMTP mailbox' if os.environ.get('DIMAX_COMMERCIAL_MAILPIT') == '1' else 'local render capture'
+    print(f'PASS: encrypted outbox verified through {channel}; no email sent externally')
 
 
 def verify():
@@ -108,7 +149,10 @@ def verify():
         row = rows[0]
         assert row['terms_id'] == saved['terms']['id'] and row['price_id'] == saved['price']['id']
         assert row['mailbox_verified_at'] and not row['usable_for_billing'] and row['is_demo']
-        for scope in ('OPERATIONS', 'INSTALLER', 'FOREIGN'):
+        assert row['agreement_id'] is None
+        if os.environ.get('DIMAX_COMMERCIAL_MAILPIT') == '1':
+            assert row['delivery_status'] == 'SENT'
+        for scope in ('OPERATIONS', 'FINANCE', 'VIEWER', 'INSTALLER', 'FOREIGN'):
             client.headers['Authorization'] = 'Bearer ' + saved['tokens'][scope]
             assert client.get(API + path + '/approvals').status_code == (404 if scope == 'FOREIGN' else 403)
         client.headers.clear()

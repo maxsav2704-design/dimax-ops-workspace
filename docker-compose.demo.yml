@@ -56,6 +56,9 @@ services:
       APP_ENV: ${APP_ENV:-demo}
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-dimax}
       JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_ENABLED: ${AI_ENABLED:-false}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
       MINIO_ENDPOINT: minio:9000

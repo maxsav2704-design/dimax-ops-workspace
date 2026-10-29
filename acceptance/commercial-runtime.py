@@ -12,6 +12,8 @@ import sys
 from uuid import UUID, uuid4
 
 import httpx
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
@@ -38,6 +40,14 @@ FINANCIAL_TABLES = (
 )
 
 
+def assert_schema_head(db):
+    # Match the frozen source snapshot, not a revision left behind by a later feature.
+    config = Config('/workspace/alembic.ini')
+    config.set_main_option('script_location', '/workspace/alembic')
+    head = ScriptDirectory.from_config(config).get_current_head()
+    assert head and db.scalar(text('SELECT version_num FROM alembic_version')) == head
+
+
 def guard():
     url = make_url(settings.DATABASE_URL)
     if (os.environ.get('APP_ENV') != 'test' or url.host != 'db'
@@ -47,7 +57,7 @@ def guard():
     import_all_orm_models()
     with SessionLocal() as db:
         assert db.scalar(text('SELECT current_database()')) == url.database
-        assert db.scalar(text('SELECT version_num FROM alembic_version')) == '0087_commercial_agreements'  # head after the activation stage
+        assert_schema_head(db)
 
 
 def snapshot(db):
