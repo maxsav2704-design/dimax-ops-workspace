@@ -55,6 +55,32 @@ money received from the factory, what it settled, what stayed unallocated, or a 
 | Admin `tsc --noEmit`: only the five pre-existing errors in the other agent's `OutboxRecoveryPage.test.tsx` and `ContractTerms.test.tsx`; none in step-8 files | confirmed (step-8 files clean) | — |
 | Live run (admin pane, real upload through the browser) | not verified in this block | — |
 
+## 3a. Review pass (owner's skills: code-review, security-review, simplify; 2026-10-30)
+
+- **code-review (high)**: 11 findings, all fixed with regression tests — money allocated to a version now
+  blocks the step-6 correction (RECONCILED); a write-off is capped at the unpaid principal, a retention at
+  the unpaid part (paid money is never written off or re-labelled); the proof of a received payment
+  cannot prove an outgoing refund; FK from a proof to its payment; the duplicate bank-reference check is
+  the unique index alone; `AttachmentDTO` carries `claim_id` / `payment_id` honestly; batch loading of
+  allocations/refunds; shared helpers for uploads and request-id replay; tests for SAME_PROOF and for
+  cancelling an approved refund.
+- **security-review**: no finding with confidence ≥ 7 (tenant and ownership checks on every child row,
+  bound SQL only, sanitised object keys, attachments served as downloads). Hardening applied anyway:
+  `X-Content-Type-Options: nosniff` on attachment downloads.
+- **simplify** (three angles; the fourth agent hit the usage limit): applied — `common.py` (money,
+  fingerprint, request-id replay, decision replay, attachment store) shared by the settlement services;
+  `claim_effects.py` as a leaf module so step 6 needs no late import; one `Rows` bundle per claim loaded
+  once per write and in bulk for the summaries; targeted duplicate queries; sync upload handlers (no
+  blocking work on the event loop); shared route helpers `write` / `attachment_response`; admin:
+  `contractPath` as the single base, `form.ts` / `use-upload.ts` / `PayloadDecisionDialog` shared by both
+  panels, the post dialog on the common write hook (409 meta exposed), dialog-only queries fetched on
+  demand. Skipped on purpose: storing the issue-snapshot hash on the claim (needs a column; the hash is
+  cheap), a `kind` column on attachments (schema change, noted for step 10 when delivery files arrive),
+  request ids on cancel/release (idempotent by state), carrying decisions over to a corrected version
+  (owner decision).
+- Gates after the pass: settlement modules 13 passed (slow run, 14 min, host under memory pressure after
+  a Docker Desktop restart); admin 28 passed, eslint, ratchets, tsc (same five pre-existing errors).
+
 ## 4. Open
 
 - Accountant: VAT rule, so INC_VAT money can be allocated against ex-VAT claims.

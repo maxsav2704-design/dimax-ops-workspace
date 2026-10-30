@@ -1,0 +1,10 @@
+# Overlay on top of commercial-runtime.compose.yml + commercial-approval.compose.yml +
+# commercial-activation.compose.yml: switches the settlement stages (claims 0093, reconciliation 0094,
+# payments 0095) on for the disposable acceptance API only. Never a working deployment.
+services:
+  api:
+    environment:
+      FACTORY_CLAIMS_ENABLED: "true"
+      FACTORY_RECONCILIATION_ENABLED: "true"
+      FACTORY_PAYMENTS_ENABLED: "true"
+      JOURNAL_PARTIAL_ACCEPTANCE_ENABLED: "true"
