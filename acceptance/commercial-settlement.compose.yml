@@ -1,6 +1,7 @@
 # Overlay on top of commercial-runtime.compose.yml + commercial-approval.compose.yml +
 # commercial-activation.compose.yml: switches the settlement stages (claims 0093, reconciliation 0094,
-# payments 0095) on for the disposable acceptance API only. Never a working deployment.
+# payments 0095) on for the disposable acceptance API only, and adds a disposable object store for the
+# answer / proof uploads (synthetic credentials, tmpfs, no host port, isolated network). Never a working deployment.
 services:
   api:
     environment:
@@ -8,3 +9,19 @@ services:
       FACTORY_RECONCILIATION_ENABLED: "true"
       FACTORY_PAYMENTS_ENABLED: "true"
       JOURNAL_PARTIAL_ACCEPTANCE_ENABLED: "true"
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: settlement-disposable
+      MINIO_SECRET_KEY: settlement-disposable-secret-not-for-production
+      MINIO_BUCKET: dimax-settlement-acceptance
+    depends_on:
+      minio:
+        condition: service_started
+  minio:
+    image: dimax-minio:source-9e49d5e
+    mem_limit: 192m
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: settlement-disposable
+      MINIO_ROOT_PASSWORD: settlement-disposable-secret-not-for-production
+    tmpfs: [/data]
+    networks: [isolated]

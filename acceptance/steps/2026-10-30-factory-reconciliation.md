@@ -58,7 +58,7 @@ of the obligation was held back. Payment and retention terms exist only as appro
 | Regression: architecture, OpenAPI contract, RBAC matrix, commercial approvals / terms / drafts / activation, partial acceptance, claims, reconciliation | confirmed by tests: 287 passed, 3 failed — the pre-existing `test_outbox_health.py` cases of the other agent's outbox recovery (see the step 4 record) | `scratchpad/recon-2.log` |
 | Admin: "Reconcile" on issued / superseded packages opens the panel — figures (presented, acknowledged, disputed, written off, outstanding, retention, released, held, payable now, paid as a later step), answer registration with required attachment (uploaded first, then the JSON body with `attachment_id`), optional per-line decisions, write-off preparation with lines and basis, decision dialog showing the full fingerprint and expected version with an explicit check, retention set / change, release with evidence, contract summary, switched-off message | confirmed by tests | `src/test/ClaimReconciliation.test.tsx` (3), `ContractClaims.test.tsx` (2); eslint; ratchets |
 | Admin `tsc --noEmit`: only the five pre-existing errors in the other agent's `OutboxRecoveryPage.test.tsx` and `ContractTerms.test.tsx`; none in step-7 files | confirmed (step-7 files clean) | — |
-| Live run (admin pane, real upload through the browser) | not verified in this block | — |
+| Live run (admin pane, real upload through the browser) | seen live 2026-10-30 on the disposable stack: answer with uploaded message, three numbers, write-off prepared and approved by fingerprint, retention recorded — see the step 8 record, section 3 | browser pane |
 
 ## 4. Open
 

@@ -53,7 +53,7 @@ money received from the factory, what it settled, what stayed unallocated, or a 
 | Regression: architecture, OpenAPI contract, RBAC matrix, commercial approvals / terms / drafts / activation, partial acceptance, claims, reconciliation, payments | confirmed by tests: 290 passed, 3 failed — the pre-existing `test_outbox_health.py` cases of the other agent's outbox recovery (see the step 4 record) | `scratchpad/pay-2.log` |
 | Admin: "Payments" tab — money summary, register dialog, proof upload per draft (post disabled until a proof exists), posting shows the duplicate warning and posts only with the explicit acknowledgement, allocate dialog (issued package, part, amount), allocations under the payment with release, refund proposal, decision against the full fingerprint, execute with proof, reverse with reason and one-time request id, switched-off message; reconciliation figures show paid, retention paid, balance due and the settlement state, allocations listed on the claim | confirmed by tests: 28 passed across the four files (incl. `FactoryAccountingPage.test.tsx`); eslint and ratchets clean | `src/test/ContractPayments.test.tsx` (2), `ClaimReconciliation.test.tsx` (3), `ContractClaims.test.tsx` (2); eslint; ratchets |
 | Admin `tsc --noEmit`: only the five pre-existing errors in the other agent's `OutboxRecoveryPage.test.tsx` and `ContractTerms.test.tsx`; none in step-8 files | confirmed (step-8 files clean) | — |
-| Live run (admin pane, real upload through the browser) | not verified in this block | — |
+| Live run on the disposable stack (`acceptance/commercial-settlement.compose.yml`: flags on + disposable MinIO; admin dev server 4194 → gateway 8003; synthetic OWNER through the real login): November package 1.1 composed and issued (3 lines, 951.00); factory answer registered with the uploaded message (801.00 acknowledged → disputed 150.00, clarification required); write-off 150.00 prepared with the disputed line and approved against the full fingerprint and version 1.1 (outstanding 801.00); retention 100.00 recorded (payable now 701.00); payment 500.00 registered, proof uploaded, posted, allocated to 1.1 (payable now 201.00); advance 300.00 posted and allocated 201.00 (overpayment 99.00 shown apart); refund 99.00 proposed, approved by OWNER, executed with the transfer proof (refunded 99.00, payable now 0); claim figures end at paid 701.00, balance due 100.00, state "Principal paid, retention payout pending" | seen live | browser pane 2026-10-30; network log: every write 200/201 |
 
 ## 3a. Review pass (owner's skills: code-review, security-review, simplify; 2026-10-30)
 
@@ -80,6 +80,16 @@ money received from the factory, what it settled, what stayed unallocated, or a 
   (owner decision).
 - Gates after the pass: settlement modules 13 passed (slow run, 14 min, host under memory pressure after
   a Docker Desktop restart); admin 28 passed, eslint, ratchets, tsc (same five pre-existing errors).
+
+## 3b. Found live and fixed
+
+- Attachment links were plain `<a href>` to the API path: on a split origin they hit the admin host and carry no
+  token. Downloads now go through the authenticated `apiDownload` client (`downloadAttachment`).
+- Issuing a package did not refresh the reconciliation summary on the Claims tab (stale "issued: 0"); the
+  tab now invalidates the summary too.
+- The disposable stack had no object store: uploads failed with 500 until a disposable MinIO was added to the
+  overlay (documented there). The 2026-10-23 journal seeding script wrote rows into an already signed
+  journal and is refused by the 0092 trigger; `settle-journal.py` (scratchpad) writes rows first.
 
 ## 4. Open
 
