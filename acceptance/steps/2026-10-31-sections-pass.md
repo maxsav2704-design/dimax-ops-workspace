@@ -560,3 +560,49 @@ replaces the check with the model's list and stops if a project holds an unknown
   to the preview count while the summary is missing.
 - security-review (inline): no new surface; the server bound limits a bulk retry to 200 ids.
 - simplify: the "unknown" state is one pair of notes reused by all tiles and rows.
+
+## 13. Settings and users
+
+### Found (logic + visuals)
+- No user management for the company: accounts could be created only by the platform operator with a service token.
+  The owner could not see, add, switch off or re-scope the company's accounts, although the `can_manage_users` flag
+  existed. Nobody could change their own password.
+- Consequence (section 4 question): an installer account could be linked only by typing an id.
+
+### Done
+- Backend `/admin/users` (needs the right to manage users): list; create an office or installer account (the server
+  generates a one-time password, shown once; an installer account can be linked to its installer card at creation);
+  rename, change access, switch off (every session revoked at once) or on; reset a password (sessions revoked, new
+  one-time password). `/auth/change-password` lets the signed-in person change their own password (current one checked,
+  at least 10 characters, every session ends, rate-limited like login). Audit USER_CREATED / USER_UPDATED /
+  USER_PASSWORD_RESET / USER_PASSWORD_CHANGED, never with a password.
+- Rules: nobody changes, switches off or resets their own account here; the company keeps at least one active owner;
+  only an owner gives owner access or the right to manage users. A non-owner never creates, raises or resets an account
+  beyond their own access (they see the one-time password, so this would be a way to sign in with more rights; found
+  in the security review).
+- Admin Settings: "Company users" (rows with access selector, switch off/on and new password behind a confirmation,
+  your own row marked and locked; add form with office / installer app, access or installer card; the one-time password
+  panel with a copy button and "shown once"), and "My password" for everyone.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Create, sign in, switch off (sessions revoked, sign-in refused), switch on, reset (old password refused); no password in audit | confirmed by tests | `test_company_users_api.py` |
+| Own account and last owner protected; owner-only grants; installers refused; installer account linked; own password change | confirmed by tests | same file (6 tests) |
+| A non-owner cannot hand out or take over more access than they have | confirmed by tests | same file, escalation test |
+| Login rate limit, RBAC matrix, OpenAPI, architecture suites | confirmed by tests | 204 passed, then 9 after the guard |
+| One-time password panel, confirmation before switching off, own row locked, password form | confirmed by tests | `CompanyUsers.test.tsx` (3); lint, ratchets, unlabeled-controls guard, tsc clean |
+| Settings page on demo: 3 accounts, own row marked "вы" and dimmed actions, installer card shown | seen live | demo stack (no account created or changed: accounts are not touched without the owner's approval) |
+
+### Review pass
+- code-review (inline): the email check covers switched-off accounts (unique per company); sessions are revoked with
+  the company scope; each route checks the right inside its own unit of work.
+- security-review (inline): one finding fixed (non-owner escalation through the one-time password). Passwords are only
+  in the create / reset responses (no-store), hashed at rest, never audited; switching off revokes sessions, and every
+  request re-checks that the user is active.
+- simplify: reuses the platform rules (limits, hashing, admin profile) and the installer link service.
+- frontend-design: follows the admin's design system; the one memorable element is the one-time password panel.
+
+### For the owner (answered by the rule set)
+- First sign-in with a one-time password does not force a change yet; the person changes it in "My password". Forcing
+  it would need a login flag and a phone-app screen (section 16).
