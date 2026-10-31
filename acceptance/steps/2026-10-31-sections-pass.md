@@ -606,3 +606,45 @@ replaces the check with the model's list and stops if a project holds an unknown
 ### For the owner (answered by the rule set)
 - First sign-in with a one-time password does not force a change yet; the person changes it in "My password". Forcing
   it would need a login flag and a phone-app screen (section 16).
+
+## 14. DIMAX AI
+
+### Skill choice
+- `claude-api` does not apply: the module is built on the OpenAI Responses API (`AI_PROVIDER=openai`), and the skill
+  is for Claude/Anthropic code. Switching the provider is an owner decision, not a fix.
+- The quality skill used is an independent security review of the agent by a separate reviewer (read-only, not
+  anchored on my reading), plus the test suites and a live check.
+
+### Found (logic + visuals)
+- The independent review found no exploitable issue. Verified protections:
+  - Every stored conversation, task and proposal is scoped to company + owner.
+  - Tool rights are re-checked against the live role and scope on every call.
+  - The selected object is loaded with the user's rights before any model call.
+  - No business write happens without the human confirmation.
+  - Replay, expiry and version checks guard execution.
+  - No key or provider body reaches logs, errors or the audit log.
+  - The answer is rendered as plain text (no markdown or image exfiltration).
+- Below the bar, both confirmed in the code:
+  - A confirmation interrupted between its two phases stayed CONFIRMED and could execute later with the same request id,
+    after the proposal expired.
+  - FINANCE received `installer_workload`: counts of doors and issues by status, which that scope cannot read directly.
+- Live: the page says honestly that the demo provider answers and no real model is connected. Answers come from system
+  records with source links.
+
+### Done
+- Phase 2 of a confirmation checks the expiry: an expired stuck proposal becomes EXPIRED (audited) and never executes.
+- FINANCE no longer gets `installer_workload` (the same rule as `search_projects` and `import_inbox`).
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| All AI suites (admin, actions, installer, memory, rules, worker) | confirmed by tests | 140 passed / 4 skipped before; 77 passed after the fixes |
+| Stuck confirmation after expiry never executes; FINANCE tool list | confirmed by tests | `test_dimax_ai_actions.py`, `test_dimax_ai.py` |
+| AI page with demo provider, sources and the honest connection note | seen live | demo stack |
+| A real model answering | needs external infra | no provider key on this machine (and none should be read here) |
+
+### For the owner
+- The company's daily AI limit is shared: any user, a viewer or an installer, can use it up for everyone. A per-person
+  share would keep the office working.
+- Connecting a real model needs the provider key in the server environment (OpenAI as built). Moving to Claude would
+  be a separate step, done only on your decision.
