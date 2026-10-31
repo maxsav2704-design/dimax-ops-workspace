@@ -523,3 +523,40 @@ replaces the check with the model's list and stops if a project holds an unknown
 - Changing an object field for one document only (the old JSON allowed it): the object data is the source of truth.
   A one-off change belongs in a manual field of the template, so the document says what was typed and the object stays
   right (rule 4: exceptions explicit). No change.
+
+## 12. Operations and outbox
+
+### Found (logic + visuals)
+- False all-clear: when a source failed or had not answered yet, the tiles showed a green 0. The header said "Система в
+  норме · 0 инцидентов", and the integration rows said "в норме · очередь доставки чиста" (seen live right after an API
+  restart).
+- "Retry all" for deliveries and imports used the 8 items previewed on the page; the rest were silently left out.
+- The bulk outbox retry accepted a list of any length.
+- Tile statuses "WARN" / "OK" and incident kinds "IMPORT" / "SYNC" raw.
+- 3 failing architecture tests in `test_outbox_health.py`: the worker drains up to 20 one-message batches per pass
+  (commit 6462010), but the mock returned the same message forever (mark_failed called 20 times). The fixture was
+  wrong; the worker was right.
+
+### Done
+- Admin: a source that failed shows "-" and "Data did not load", and one still loading shows "Loading…" (orange, never a
+  green 0). The header says "Checking the systems…" until every source answered, and "Some data did not load" after a
+  failure. Integration rows say "checking…" / "data did not load" instead of "nominal".
+- Admin: "Retry all" first loads the full failed lists (deliveries up to 200 per run with the channel filter, imports up
+  to 100 = the server limit) and retries them all. The confirmation names the real count. Tile statuses and incident
+  kinds are translated.
+- Backend: the bulk outbox retry takes 1 to 200 ids.
+- Tests: the outbox-health fixture gives one message, then an empty queue (no worker change).
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Worker health tests | confirmed by tests | `tests/architecture/test_outbox_health.py`: 25 passed |
+| Bulk retry bounds; outbox, RBAC, audit, OpenAPI suites | confirmed by tests | 44 passed |
+| Unknown never green; header "Some data did not load"; retry-all over the full scope with real counts | confirmed by tests | `OperationsPage.test.tsx` (18), with `IndexPage`: 27; lint, ratchets, tsc clean |
+| Operations page after load (2 incidents, real tiles); "Data did not load" during the API restart | seen live | demo stack |
+
+### Review pass
+- code-review (inline): the full-scope fetch is filtered by channel on the client as well; the confirm text falls back
+  to the preview count while the summary is missing.
+- security-review (inline): no new surface; the server bound limits a bulk retry to 200 ids.
+- simplify: the "unknown" state is one pair of notes reused by all tiles and rows.
