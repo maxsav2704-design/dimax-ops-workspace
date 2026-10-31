@@ -225,3 +225,38 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 - Without the partial-acceptance flag a new journal lists every installed door again, including doors signed in an
   earlier journal (cumulative acts). Keep cumulative acts, or switch the flag on (each act lists only new work)?
   The claims side is protected separately in section 8.
+
+## 6. Catalogs (door types, reasons, product library)
+
+### Found (logic + visuals)
+- A deleted door type or reason kept its code forever: creating the same code again answered 409.
+- Admin: the edit dialog stayed open after a successful save; a bulk action (activate / deactivate / delete) kept
+  rows selected under a previous filter and reached rows hidden by the current one; a success notice of an earlier
+  action could stand next to the error of the latest; notices, import mode and the import parse error in English;
+  the door-type page footer (work stages) rendered outside the page frame; seen live: "Раздел: All".
+- Library: `return_to` from the address was followed as is (an outside address could be navigated to); raw
+  `ACTIVE` / `ARCHIVED`; a byte-order mark before "use client".
+
+### Done
+- Backend: creating a code that belonged to a deleted door type / reason brings that entry back (same id, new name),
+  so history that names it stays linked; a live duplicate is still 409.
+- Admin: the edit dialog closes on success; changing a filter clears the selection; the success notice hides while
+  an error shows; messages, import mode and the filter name in the interface language; footer inside the page.
+- Library: only an internal path is accepted as the return target (`safeInternalNextPath`); readable statuses; BOM
+  removed.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Deleted code created again brings back the same entry; live duplicate 409 (door types and reasons) | confirmed by tests | `test_catalogs_and_settings_api.py` (new parametrized test); catalog, bulk/import, file import suites: 54 passed |
+| Catalog pages, work stages, library | confirmed by tests | `DoorTypesPage`, `ReasonsPage`, `WorkStages`, `LibraryPage` tests (14) |
+| Door types page: filter name and labels | seen live | demo stack |
+
+### Review pass
+- code-review (self): reviving instead of a migration keeps one row per code and the links of old rates / journals.
+- security-review: the library no longer navigates to an address taken from the URL unless it is internal.
+- simplify: no new helpers; the shared status labels reused.
+
+### For the owner
+- Catalog names are single-language (the product library has RU and HE names). Add HE/RU names to door types and
+  reasons?
