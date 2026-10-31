@@ -148,3 +148,40 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 
 ### For the owner
 - Issue workflow has no transition rules (the office can move any state to any state). Keep it free, or restrict?
+
+## 4. Installers
+
+### Found (logic + visuals)
+- Editing an installer opened the form with empty address, document and notes and saved them as null: every edit
+  wiped them (the API never returned them, so the form could not show them).
+- Creating an installer with an account checked only the company (an office account could be linked); status was
+  free text; phones were stored as typed (the same number twice in different forms); deleting an installer with
+  doors still to install left that work assigned to nobody visible.
+- Admin: delete installer, delete rate and unlink account ran without a question; saving one rate reset the
+  prices typed in the other rows; prices printed with a hard-coded "ILS".
+- Seen live: raw `ACTIVE` under the name, "Срез: all", the account link shown as a UUID.
+
+### Done
+- Backend: the list returns address and notes and a masked document hint (`•••8877`), never the number; phones are
+  stored in one international form (422 when not a phone); status limited to ACTIVE / BUSY / INACTIVE; creating
+  with an account applies the link rules (active INSTALLER account, not linked elsewhere); deleting an installer
+  with doors still to install is refused (409 with the count).
+- Admin: the form starts from the stored values (one builder for the edit button and the deep link); an empty
+  document field keeps the stored number; delete / delete rate / unlink ask first; other rows keep their unsaved
+  prices; money in the interface format; readable status, slice and account state.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Edit keeps address / notes / document; phone normalized; bad status and phone refused; delete refused with open doors | confirmed by tests | `test_installers_api.py` (2 new); installer, link, rates, access, isolation, OpenAPI suites: 39 passed |
+| Form prefilled, document kept when the field is empty | confirmed by tests | `InstallersPage.test.tsx` (6, 1 new) |
+| Card shows "Доступен", "Срез: все", "Привязана: может входить в приложение" | seen live | demo stack |
+
+### Review pass
+- code-review (self): the deep link filled the form with its own empty fields — replaced by the shared builder.
+- security-review: the document number is no longer needed by the page and is not sent back (only a masked hint).
+- simplify: one `formFromInstaller` for both entry points.
+
+### For the owner
+- Linking an account still means typing its id; a picker of unlinked installer accounts needs an account list
+  endpoint (user management is not built yet, see platform section).
