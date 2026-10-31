@@ -479,3 +479,47 @@ Found while answering question 1: the database check on the project lifecycle ca
 COMPLETED, ARCHIVED), and 0055 added the right list only "if not exists". A database built from scratch (the demo
 database included) therefore refused ON_HOLD and CANCELLED: pausing or cancelling an object answered 500. Migration 0099
 replaces the check with the model's list and stops if a project holds an unknown status.
+
+## 11. Documents (templates, generation, downloads)
+
+### Found (logic + visuals)
+- File names: every letter outside Latin became "_" (a Russian or Hebrew template file turned into "____.docx"). Generated
+  documents were named "document-1a2b.txt", and the download header was built from the raw name (quotes, non-Latin
+  letters).
+- Manual fields had to be typed as JSON in a text box ("Manual fields JSON").
+- Messages only in English ("Template uploaded", "Failed to …", "Project is required"). Statuses "ACTIVE", "ARCHIVED",
+  "READY" raw. The object list stopped at 200, and "Объекты" / "Проект" were mixed on one screen.
+- Template upload, archive / restore and document generation were not in the audit log.
+- A DOCX could unpack to any size, and the "date.today" field was the server's UTC day.
+- The client read only `filename="…"`, so a UTF-8 name would have been lost even after a server fix.
+
+### Done
+- Backend: names keep letters of any language (path parts and unsafe signs removed). Storage keys stay ASCII.
+  Generated documents are named "template - object code - Israeli date + short code" (unique). Downloads send RFC 6266
+  `filename*=UTF-8''…` with an ASCII fallback (shared helper `app/api/v1/downloads.py`). Audit actions
+  DOCUMENT_TEMPLATE_UPLOADED / _ARCHIVED / _RESTORED and DOCUMENT_GENERATED (manual field names, not values). A DOCX
+  that unpacks above 50 MB is refused. A blank typed value counts as missing on the server too.
+- Admin: one labelled input per field the object data does not hold (no JSON). Messages and statuses in the interface
+  language. All objects loaded, the word "object" used throughout. The shared download helpers reused, and the client
+  reads the UTF-8 name first.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Hebrew file name kept and downloaded with its UTF-8 name; readable unique document names; audit rows; blank field refused | confirmed by tests | `test_documents_api.py` (new test + blank case) |
+| Header safe against quotes and line breaks; empty name | confirmed by tests | `tests/architecture/test_attachment_disposition.py` |
+| Oversized DOCX refused on upload and render | confirmed by tests | `test_documents_docx_rendering.py` |
+| Manual field typed in its input before generating; filename parser | confirmed by tests | `DocumentsPage.test.tsx` (7), `download.test.ts`; lint, ratchets, tsc clean |
+| Documents page with object fields on demo data | seen live | demo stack (no templates on demo; upload not driven: the browser pane cannot attach a file) |
+
+### Review pass
+- code-review: 5 findings. Fixed: same-day duplicate names, UTC date, blank manual field. Skipped: overriding an object
+  field for one document (owner question below) and ASCII-only template codes (internal only).
+- security-review (inline): no new issue. Header injection closed; no path from the name into storage; DOCX unpack
+  bounded; values escaped in HTML templates, and files are served only as attachments.
+- simplify: duplicated download helpers removed in favour of `src/lib/download.ts`; JSON parsing helpers gone.
+
+### For the owner (answered by the same rule set)
+- Changing an object field for one document only (the old JSON allowed it): the object data is the source of truth.
+  A one-off change belongs in a manual field of the template, so the document says what was typed and the object stays
+  right (rule 4: exceptions explicit). No change.
