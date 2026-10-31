@@ -376,3 +376,35 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
   the VAT rule?
 - Stage lines of a "full installation" contract are never presented (owner decision of 2026-10-23, still waiting for
   the stage-rate decision).
+
+## 9. Earnings ledger
+
+### Found (logic + visuals)
+- A retry of the same correction after a lost answer got 409 "already corrected". The office could not tell its own
+  success from a conflict.
+- A correction to the same rate was accepted and wrote a reversal plus an identical correction row.
+- The correction dialog showed no money effect before saving, and an error of an earlier row stayed when the dialog
+  was opened for another row.
+- The project filter loaded only the first 50 projects. A deep link to a later project disabled the ledger as "not
+  in scope".
+- Seen live: every card showed the raw entry id when a door had no code ("7fc5f4f4-…"). "Addon" and "Door + addon"
+  appeared in the English labels.
+
+### Done
+- Backend: the same correction again (same rate and reason) returns the saved result. A different second correction
+  is still 409. A correction to the recorded rate is refused (422).
+- Admin: the dialog shows now / after / difference (quantity × rate) and that a correction cannot be undone. The same
+  rate is flagged and not offered. Opening the dialog clears an earlier error. All projects are loaded for the
+  filter. Raw ids are no longer shown on cards (they stay in the CSV). Labels read "Extra work" and "All work".
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Replay returns the same correction and writes nothing new; another correction 409; same rate 422 | confirmed by tests | `test_earnings_corrections_api.py`; with stage earnings and payroll lifecycle: 35 passed |
+| Preview, same-rate block, deep links, filters | confirmed by tests | `EarningsLedgerPage.test.tsx` (8); lint, ratchets, tsc clean |
+| Dialog preview on demo data (80 → 95, +15), save blocked without a reason; nothing saved | seen live | demo stack |
+
+### Review pass
+- code-review (inline): the replay matches the exact rate and reason; a changed reason is a new request and stays 409.
+- security-review (inline): no new surface; the same OWNER/rates guard and the factory-confirmed refusal apply first.
+- simplify: clean.
