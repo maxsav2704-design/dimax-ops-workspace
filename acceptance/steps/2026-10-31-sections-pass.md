@@ -708,3 +708,58 @@ replaces the check with the model's list and stops if a project holds an unknown
 ### For the owner
 - A forced password change at first sign-in (a section 13 question) would send the installer straight to this card;
   today it is a choice.
+
+## 16. Mobile app (offline queue and sync)
+
+### Found
+- Offline time used up the retries. Every sync without a connection counted as a failed delivery: 8 attempts at
+  1, 3, 10, 30 and then 60 minutes. After about 4.7 hours offline, the installer's work turned BLOCKED.
+- Work stopped by the retry limit never went out again by itself. The office did not see the installation until the
+  installer pressed "Retry".
+- When the server refused the account on the whole request (403: switched off, role changed), the phone split the
+  queue in halves as if one event were malformed. It then blocked every event and rolled back the local door
+  statuses, so done work looked undone.
+- A per-event `AUTH_REQUIRED` answer (the session, not the work) also rolled the local state back.
+- The release of `AUTH_REQUIRED` work ran with every minute's sync, not once per sign-in. The provider test mocked the
+  sync module without that function, so this path never ran in tests.
+
+### Done
+- No connection is not a failed delivery:
+  - A request that never reached the server gives its attempt back and goes again with the next sync (every
+    minute), however long the phone stays offline.
+  - A timeout still counts as an attempt, because the server may have received the request
+    (`RequestTimeoutError`, a kind of `NetworkError`).
+- A server that answers again releases the work the retry limit stopped in earlier syncs. The release happens before
+  the answer's acks, so work the same answer stops again waits for a later one. The queue text says it goes by itself
+  once the server answers. The manual retry stays.
+- A refused account is not about any event:
+  - A 403 on the whole request is never halved and nothing is rolled back.
+  - The work waits as `AUTH_REQUIRED` ("Sign in again") and goes after the next sign-in.
+  - A per-event `AUTH_REQUIRED` follows the same rule.
+- `AUTH_REQUIRED` work is released once per sign-in, not every minute. Otherwise a refused account would resend the
+  whole queue each minute.
+- Not changed: real verdicts on the work (conflicts, validation, factory price) still block and roll back as before.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Offline gives the attempt back (even the 8th); a timeout still counts and blocks at the limit | confirmed by tests | `service.test.ts`, `policy.test.ts`, `api.test.ts` |
+| 403 on the request: one request, no halving, all parked as `AUTH_REQUIRED`, no door rollback; per-event `AUTH_REQUIRED` keeps local state | confirmed by tests | `service.test.ts` |
+| Retry-limit work released after a server answer, not after a failed one | confirmed by tests | `service.test.ts` |
+| `AUTH_REQUIRED` released once per sign-in across minute syncs | confirmed by tests | `AppProviders.test.ts` (fails when the guard is removed) |
+| The five new service tests fail on the old code | confirmed by tests | the old `service.ts` was run against them: 5 failed |
+| Whole mobile suite and types | confirmed by tests | 870 tests in 69 files; `tsc --noEmit` clean; test discovery contract 69/69 |
+| The same on a phone (offline for hours, then back) | not verified | no phone attached to this machine (`adb devices` empty); recipe in the acceptance device memory |
+
+### Review pass
+- Code review: every send failure goes through one decision, `recordSendFailure`: offline, refused account,
+  transient server failure, or verdict. The halving path and the per-half path use the same rule.
+  `isRetryableSyncError` is unchanged, so other callers keep their meaning.
+- Security: nothing new crosses the network. A refused account no longer triggers 2N requests from halving, and no
+  longer resends the queue every minute.
+- Load: the release is one UPDATE per successful sync that matches no rows in the normal case.
+
+### For the owner
+- A poison event that makes the server fail (5xx) for its whole batch still holds back the batch. Each cycle is 8
+  attempts over about 4.7 hours, then a release after the next server answer. Splitting a batch on repeated 5xx would
+  isolate it; I left the batch rule unchanged until there is a real case.
