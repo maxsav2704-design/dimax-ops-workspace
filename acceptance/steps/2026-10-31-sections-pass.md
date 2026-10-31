@@ -68,3 +68,44 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 
 ### For the owner
 - Should a CANCELLED or ON_HOLD project refuse installation and earnings? Today the status is informational.
+
+## 2. Calendar
+
+### Found (logic + visuals)
+- PATCH ignored an explicit null: a project link, place or description could never be cleared; unlinking a site
+  kept its address copied into the event.
+- An unknown `event_type` filter reached the database (500); assignees were read one query per event; no audit
+  of create / change / delete; an event linked to a site navigated by the address text, not by the site's
+  coordinates or Waze link; nothing showed that one crew was booked twice at the same time.
+- Admin: delete without a question; events could only start and end on the same day (an overnight event was cut
+  when edited); a load error had no retry; the CSV export had English headers, raw type codes and no BOM (Excel
+  showed Hebrew/Russian as garbage); the project picker saw only the first 50 projects.
+- Seen live (owner's remark): overlapping events became slivers one letter wide, and a click opened the details
+  above the grid, out of sight, so nothing seemed to happen.
+
+### Done
+- Backend: explicit null clears place / description / project (and the site address copied in); type filter
+  validated (422); assignees and projects read in one query each; audit `CALENDAR_EVENT_CREATED/UPDATED/DELETED`
+  without the free-text description; navigation to the site's coordinates or Waze link when the event has no
+  place of its own; `overlapping_event_ids` per event (same installer, overlapping time).
+- Admin: delete asks first (a failed delete stays retryable in the editor); end date field (night shifts; moving
+  the start moves the end by the same days); retry on load errors; shared `src/lib/csv.ts` (BOM, formula-safe,
+  localized headers and types); shared `src/lib/projects-list.ts` (all project pages, used by Objects and
+  Calendar); double-booked events marked on the card and explained in the details; overlapping cards stacked
+  with an offset instead of slivers; a click scrolls the details into view; unavailable Waze / WhatsApp / Call
+  buttons disabled with the reason; "Open project" only when a project is linked.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Null clears optional fields and the copied address; bad type filter 422; double booking ids; site coordinates for navigation; audit rows | confirmed by tests | `test_calendar_api.py` (new test + exact keys), boundary + architecture: 12 passed |
+| Delete confirmation and retry; overnight end date; start shift keeps length; double-booked marker and note; CSV BOM and formula guard | confirmed by tests | `CalendarPage.test.tsx` (11), `csv.test.ts` (2) |
+| Double booking marked on both cards, details scroll into view on click, stacked cards readable | seen live | demo stack, two test events created and deleted afterwards |
+
+### Review pass
+- code-review: 3 findings, all fixed (start date shift, address on unlink, description in audit).
+- security-review: no findings (no new endpoint; stricter filter validation; audit without free text).
+- simplify: CSV and project-list loading moved to shared modules instead of page copies.
+
+### Not done here
+- Filters and the selected period are not in the URL yet (DESIGN_SYSTEM asks for shareable filters).
