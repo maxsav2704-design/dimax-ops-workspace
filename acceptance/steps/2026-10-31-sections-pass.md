@@ -449,3 +449,33 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 ### For the owner
 - Reports have no period limit and no cache, and they share the database pool with phone sync (analysis finding).
   Should long periods be limited, or reports moved to a read replica?
+
+## Answers to the "For the owner" questions (sections 1-10)
+
+One rule set decides every answer, so they agree with each other:
+1. Money follows confirmed, recorded work, paid at the price of its execution time.
+2. The same work is never paid or presented twice.
+3. No price and no VAT is ever guessed.
+4. Exceptions are made by the office explicitly, with a reason, in the audit log.
+
+| Question | Answer | Why (rule) | Done |
+|---|---|---|---|
+| 1. Paused / cancelled object: refuse work? | Yes, from the moment the office paused or cancelled it. Work done before still counts when the phone syncs late. The office records exceptions itself. | 1, 4 | 0099 `lifecycle_changed_at`; door, stage and extra-work paths of the installer refuse later work (`PROJECT_ON_HOLD` / `PROJECT_CANCELLED`) |
+| 3. Issue workflow transitions | Keep them free for the office. Every move is audited, and the closing rules of step 5a already guard closing. | 4 | no change |
+| 4. Account picker | Built with user management (section 13), not before: a picker needs an account list. | — | section 13 |
+| 5. Cumulative acts | Money is safe either way: a door is presented and estimated once (0098). Switching partial acceptance on (acts list only new work) is a deploy setting, to be done after its acceptance on the real stack. | 2 | 0098; setting left to the deploy |
+| 6. Catalog names in RU / HE | Yes, as a separate step (names for door types and reasons, then PDF and phone). Not a money question. | — | later step |
+| 7a. Plan quantity 0 | 0 means nothing planned yet, so nothing can be recorded. The office plans the quantity. The admin form now says so. | 1, 4 | hint under the planned quantity |
+| 7b. A reviewed offline fact above plan | The approval is refused with the reason. The office raises the plan first, then approves: the plan stays the authority. | 1, 4 | no change (the refusal already names the plan) |
+| 7c. Time confirmed, no rate of that time | The confirmation is recorded. The stage then shows the truth (no rate / no factory prices then), and nothing is invented. | 3, 4 | confirm-time records always; status leaves `TIME_REVIEW` |
+| 7d. Remaining plan in the web cabinet | Yes. | 1 | section 15 |
+| 8a. Reinstalled door billable? | No. A door is paid by the factory once. A redo is a fix, and fix reports never earn (step 5a). | 2 | no change (0098 already keys by door) |
+| 8b. 0098 stops on existing doubles | Correct: a double presentation must be resolved by the office (cancel or correct one package), never silently. | 2, 4 | no change |
+| 8c. Opening rows with VAT | Keep them apart: only ex-VAT rows join the figures. A VAT-inclusive row is shown as "kept apart until the accountant gives the VAT rule". | 3 | `needs_vat_rule` in opening figures; principal never negative |
+| 8d. Stage lines of a full-installation contract | The factory pays per door: the door line is presented, and stage facts are the installers' split. A stage contract waits for the stage-rate decision. | 1, 2 | no change |
+| 10. Report periods | An explicit period is limited to one year (reports run live on the database that serves sync). Exact figures stay live, with no cache. A read replica is an infrastructure step. | — | 422 above 366 days |
+
+Found while answering question 1: the database check on the project lifecycle came from 0038 (PLANNED, ACTIVE,
+COMPLETED, ARCHIVED), and 0055 added the right list only "if not exists". A database built from scratch (the demo
+database included) therefore refused ON_HOLD and CANCELLED: pausing or cancelling an object answered 500. Migration 0099
+replaces the check with the model's list and stops if a project holds an unknown status.
