@@ -765,3 +765,79 @@ replaces the check with the model's list and stops if a project holds an unknown
   the phone retries that event alone, and the rest of the batch is applied.
 - So a 5xx on the whole request means the server or the network in front of it is down. Splitting the batch then
   would only multiply requests during an outage.
+
+## 17. Platform (sign-in, sessions, mail import)
+
+### Found
+- Mail import (P1 of the analysis):
+  - An empty `IMPORT_INBOX_ALLOWED_SENDERS` meant "anyone".
+  - Only the From line was checked, and anyone can forge it.
+  - A clean file from any sender changed a project's doors without a click.
+- Refresh tokens: a device that lost the answer to its refresh (weak 3G) sent its old token again. That counted as a
+  replay and ended every session of the installer, on all devices.
+- Login limits:
+  - 5 attempts per 15 minutes per IP address, successful ones included. Behind one carrier NAT, the sixth installer of
+    a crew was refused.
+  - There was no limit per account at all.
+- An independent security review of the first version of these fixes found five more problems, all fixed below:
+  - The DMARC check could be fooled by planting "dmarc=pass" in the envelope address. This was the worst one.
+  - The grace window restarted itself on every retry.
+  - A per-account lock let anyone lock out a real user with five wrong passwords.
+  - Parallel guesses slipped past the cap.
+  - The counter store only grew.
+
+### Done
+- Mail import:
+  - The mailbox is read only with a non-empty sender list.
+  - A message with more than one From line is not read.
+  - A mailed file imports without a click only when two things hold. The topmost Authentication-Results header comes
+    from the configured receiving server (`IMPORT_INBOX_TRUSTED_AUTHSERV`). It holds exactly one DMARC result, `pass`,
+    whose `header.from` is exactly the sender's domain.
+  - The header is parsed by its parts: comments are dropped, quoted strings are kept whole, an unbalanced header is not
+    trusted.
+  - Otherwise the file waits in the inbox (`analysis.held = UNVERIFIED_SENDER`). The office card says why, and the
+    office imports it with one click.
+  - Folder and upload are unchanged.
+- Refresh tokens:
+  - The same device (`device_id`) presenting the token it rotated within `AUTH_REFRESH_REUSE_GRACE_SEC` (60 s) gets a
+    new pair. This applies only if the successor was never used. The unused successor is revoked (`ROTATION_RETRY`).
+  - This happens once per token (`ROTATION_RETRIED`, first revocation time kept).
+  - Another device, no device id, a used successor, a second retry or a late replay still end every session.
+- Login limits:
+  - Per IP: 30 attempts in the window, enough for a crew behind one address.
+  - Per account and IP: 5 failures. Per account from all addresses together: 50.
+  - Each attempt is counted before the password check and cleared on success.
+  - Stale counters are dropped once there are 20 000 keys.
+  - The new settings are in both env examples.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Mailbox off with an empty list; two From lines not read; confirmed sender imports; no result, a forged lower header, another server, another domain, "dmarc=pass" planted in the address or a comment, a second DMARC result: all wait for the office, which then imports with one click | confirmed by tests | `test_import_inbox.py` (14) |
+| Lost refresh answer gets a new pair once; the third time, another device, no device id, used successor, after the window, window off: all end every session | confirmed by tests | `test_auth_api.py` |
+| Crew of 8 from one address signs in; account lock per address; account-wide cap; success clears; counters pruned | confirmed by tests | `test_auth_api.py`, `test_proxy_and_startup.py` |
+| Office card explains a held mail file | confirmed by tests | `ImportInboxCard.test.tsx` (6); lint, ratchets, tsc only the 5 known errors |
+| Architecture and settings suites with the new env keys | confirmed by tests | 199 passed |
+| Lost answer → 200; third time → `REFRESH_TOKEN_REUSE`; never-arrived pair and another device → `REFRESH_TOKEN_REUSE`; 5 wrong passwords → 6th attempt 429 | seen live | demo API on localhost, seeded test installer installer2 (its demo sessions were ended by the replay checks; nothing else changed) |
+| A real mailbox with a real receiving server | needs external infra | no mailbox is configured on this machine |
+
+### Review pass
+- Security review: done by an independent agent. Its five findings are listed under Found and fixed under Done.
+  Things it confirmed are not exploitable:
+  - lookalike server ids;
+  - folded or uppercase headers;
+  - `parseaddr` tricks on Python 3.14;
+  - timezone comparison;
+  - the row lock on the successor;
+  - the closed-by-default mailbox.
+- Code review: the route no longer catches `InvalidCredentials`. Counting before the check makes the catch unnecessary.
+
+### For the owner
+- Login counters live in each server process's memory. Production runs 2 workers, so the real caps are up to twice
+  the settings. Exact limits across processes need Redis or the database; that is a deployment decision.
+- Public journal links keep their token in plain text for 30 days. Hashing them would stop the office from resending
+  or copying an existing link: every resend would have to issue a new one and break the link already sent. I left this
+  for your decision, together with database-level protections (row security per company, an append-only audit table,
+  a separate database role), which need the production database setup.
+- `IMPORT_INBOX_TRUSTED_AUTHSERV` may be set only for a receiving server that adds its Authentication-Results to every
+  delivered message. Until then every mailed file waits for one click in the inbox.
