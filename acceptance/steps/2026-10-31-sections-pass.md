@@ -648,3 +648,63 @@ replaces the check with the model's list and stops if a project holds an unknown
   share would keep the office working.
 - Connecting a real model needs the provider key in the server environment (OpenAI as built). Moving to Claude would
   be a separate step, done only on your decision.
+
+## 15. Installer web cabinet
+
+### Found
+- Extra work: the form offered every company type, not only the planned ones. The installer saw only the planned
+  quantity, not what was left after everyone's work, and learned about the over-plan refusal (`ADDON_OVER_PLAN`,
+  section 7) only after sending.
+- Each click of "Queue extra work" made a new event key. A second click after a lost answer could record the work
+  twice.
+- Schedule:
+  - The "Overdue only" filter looked forward from now, so it was always empty.
+  - Past events were painted red like a problem.
+  - Event types and objects were shown as codes and ids, in the cards, in both filter lists and in the
+    "Focused project" chip.
+- Live: with the past window on, "Next 7 days" still looked chosen, and the "Preset 7D" chip stayed although no forward
+  range applied.
+- The web cabinet needs the network but said nothing when it dropped.
+- The installer had no place to replace the password the owner gave them (section 13).
+
+### Done
+- Backend:
+  - The installer object answer gives `qty_left` per extra-work plan: the plan minus everything recorded on it, the same
+    number the server bounds facts by.
+  - Calendar events carry `project_name`, looked up within the caller's company only.
+- Admin, extra work:
+  - Only planned types are offered; with no plan the form says so and stays disabled.
+  - A "left of the plan" hint is announced to screen readers. Over the plan it explains what to ask the office, and
+    sending is disabled.
+  - One event key per entry: a retry after a lost answer reuses it, and a changed form gets a new one.
+- Admin, schedule:
+  - "Past 14 days" looks back 14 days.
+  - Past events are muted, with a "Past" word, not colour alone.
+  - Types and object names appear in words everywhere.
+  - The past window and the forward ranges exclude each other: picking a forward range turns the past window off.
+  - The event-type labels moved to `src/lib/event-types.ts`, shared with the office calendar.
+- Admin, shell and workspace:
+  - An offline banner sits in a permanent live region.
+  - The installer workspace has the "My password" card. The mismatch error is tied to the field.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| `qty_left` on the installer object; `project_name` on installer calendar events; contracts | confirmed by tests | backend 104 passed (calendar, audit boundary, installer phase 2, OpenAPI, addons, installer projects) |
+| Planned-only form, left hint, key reuse; past window; names in words; exclusive ranges; offline banner; password card | confirmed by tests | admin 56 passed (6 files); lint, ratchets 3/3, tsc only the 5 known errors |
+| Past window request (Oct 17 → Oct 31), exclusive range buttons, offline banner text, password card, "office has not planned" with the button disabled | seen live | demo stack, seeded installer on localhost |
+| Left hint and object names with real data | confirmed by tests | the demo installer has no calendar events or extra-work plan; none were created (that would change assignments) |
+| Changing the password from the cabinet | confirmed by tests | not submitted live: it would change an account |
+
+### Review pass
+- Code review: the past filter, its URL state and the forward ranges are consistent. The name lookup moved into one map
+  shared by the option, the chip and the card.
+- Security: `project_name` comes from a company-filtered query over events the installer may already see. `qty_left`
+  is a quantity, not money, and only for objects the installer is assigned to. The password form uses the existing
+  endpoint, which asks for the current password.
+- Accessibility (WCAG 2.1 AA): past is said in words; the offline banner and the plan hint are announced; the error
+  is tied to the field. Measured contrast: 4.96:1, 5.26:1, 5.4:1.
+
+### For the owner
+- A forced password change at first sign-in (a section 13 question) would send the installer straight to this card;
+  today it is a choice.
