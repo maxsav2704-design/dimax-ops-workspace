@@ -109,3 +109,42 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 
 ### Not done here
 - Filters and the selected period are not in the URL yet (DESIGN_SYSTEM asks for shareable filters).
+
+## 3. Issues
+
+### Found (logic + visuals)
+- "Not installed" on a door with an open issue overwrote the issue's text and reset its progress to NEW: a defect
+  raised by the site or already in work lost its report and status.
+- Admin "apply to filtered": computed against the selected issue (nothing to do when it was already in the target
+  state), closed site-raised issues too (the server refuses them, so the whole batch failed), and showed raw codes
+  in the confirmation.
+- Seen live: rows showed project and door as identifier fragments, the stage column as raw `NEW`, an office owner
+  as a UUID, the selected issue header as "door / project-uuid"; dates in the browser's own format; the overdue
+  label read "Нарушено соглашение об уровне обслуживания"; no retry on a load error; 200-row cap not mentioned.
+- Found in self-review of the first fix: copying all form fields in bulk would have overwritten the priority and
+  owner of every filtered issue.
+
+### Done
+- Backend: "not installed" appends its note to an open issue and keeps its owner and progress; a closed issue is
+  reopened as a new one (as before); the report-append helper moved to `issues/application/lifecycle.py` and is
+  shared by installer, office and not-installed paths; the admin list returns `project_name` (one query).
+- Admin: bulk sends only the fields the user touched in the form; site-raised issues are left out of a bulk close,
+  with the count named in the confirmation; readable labels in the confirmation and the stage column; rows and
+  header read "site · door"; dates in the interface language; "Office user" instead of an id; retry on load
+  error; a note when the 200-row cap is reached; overdue label shortened.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Not-installed note added to an open issue, progress kept | confirmed by tests | `test_issue_lifecycle_sync.py` (new test); issue + fix flow + snapshot suites 95 passed; with OpenAPI and isolation 36 passed |
+| Bulk sends touched fields only; site issues left out of bulk close; site name in the list and header | confirmed by tests | `IssuesPage.test.tsx` (10, 1 new, 3 updated to readable labels) |
+| Site names, "Новая" in the stage column, "Сотрудник офиса", Russian dates | seen live | demo stack, 2026-10-31 |
+
+### Review pass
+- code-review (self, on the diff): 1 real defect found in my own bulk change (untouched fields copied) — fixed
+  with touched-field tracking and a test.
+- security-review: no findings (no new endpoint; project names read within the company).
+- simplify: the report-append helper is shared instead of imported across services.
+
+### For the owner
+- Issue workflow has no transition rules (the office can move any state to any state). Keep it free, or restrict?
