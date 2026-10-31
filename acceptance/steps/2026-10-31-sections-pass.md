@@ -408,3 +408,44 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 - code-review (inline): the replay matches the exact rate and reason; a changed reason is a new request and stays 409.
 - security-review (inline): no new surface; the same OWNER/rates guard and the factory-confirmed refusal apply first.
 - simplify: clean.
+
+## 10. Reports
+
+### Found (logic + visuals)
+- Missing data looked like real data: the shared number formatters showed "0" / "0.00" for a report that had not
+  loaded or had failed. The installer insight card showed 0 doors in that case.
+- A period whose start is after its end returned empty reports (zeros) instead of an error.
+- The report library claimed 6 / 7 / 6 / 4 reports per group while listing 3 each, so "23 report signals" was
+  invented. Badges "new" and "pinned" did not reflect any state.
+- Mixed language seen live (Russian interface): the installer insight card and the whole library in English; "API-прежде
+  всего, никаких поддельных отчетов"; "прямые репортажи"; "12 сигналы", "1 объектов", "3 отчётов"; SLA block "DANGER",
+  "IMPORT FAILURE RATE (24H)", "0pct", "0count", "ПРЕДУПРЕЖДАТЬ"; playbooks in server English; risk drivers "Profit
+  Gap", "Delayed Profit"; issue stages TRIAGED / IN_PROGRESS; "P1 Открыть"; "Статус PROBLEM"; sort options "Installed
+  Doors", "Payroll", "Desc"; audit filters as raw codes; "all channels"; "NIS" next to "ILS".
+- The outbox card read "Ошибка | Просрочено N" with only the overdue count after it.
+
+### Done
+- Admin: missing numbers show "-" (a real zero is still 0). The installer card shows "-" and "No data yet" until its data
+  is in. Library counts come from the rows shown; only the "live" badge stays, translated.
+- Admin: every listed text in the reader's language with correct plural forms. Server codes are mapped to readable names
+  by code (SLA metrics, playbooks, risk drivers, audit entities and actions), and statuses go through the shared status
+  labels. The outbox card reads "failed N · waiting over 15 min M". Currency is ILS everywhere.
+- Backend: a reversed period is refused for every report (422, field `date_from`).
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Reversed period 422 on report endpoints; an ordered period still 200 | confirmed by tests | `test_reports_api.py`; with catalog audit and OpenAPI suites: 47 passed |
+| Formatters: missing is "-", zero is 0 | confirmed by tests | `formatters.test.ts` |
+| Reports page sections, localized playbook / metric names, no raw "DANGER" | confirmed by tests | `ReportsPage.test.tsx` (27), `IssueExposureBasis`, `IndexPage`, `ProjectsPage`: 99 passed |
+| Russian page scanned live for English leftovers | seen live | demo stack: only data names (projects, door codes, a demo reason "Blocked opening") remain in Latin script |
+
+### Review pass
+- code-review (inline): codes keep their filter values; only the visible text changed. The period check skips mixed
+  timezone forms and malformed dates, which the endpoints answer themselves.
+- security-review (inline): no new surface; the period check runs before the endpoint and returns no data.
+- simplify: the labels are one map per family (by code) instead of per-render switches.
+
+### For the owner
+- Reports have no period limit and no cache, and they share the database pool with phone sync (analysis finding).
+  Should long periods be limited, or reports moved to a read replica?
