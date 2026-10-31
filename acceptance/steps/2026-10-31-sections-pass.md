@@ -260,3 +260,58 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 ### For the owner
 - Catalog names are single-language (the product library has RU and HE names). Add HE/RU names to door types and
   reasons?
+
+## 7. Prices and earnings (factory price list, extra work, stage earnings)
+
+### Found (logic + visuals)
+- Extra work: the office plans the type and the quantity, but the installer could record any quantity above the
+  plan and be paid for all of it (online, offline and from the phone).
+- Stages: the phone's time of a stage was taken as given. A stage dated before it was assigned, or under an older
+  price version than the one in effect on receipt, was valued automatically. Doors and extra work already send such
+  times to an office review.
+- Price list, Contracts & billing and DIMAX AI pages: every routine access-token refresh (every 15 minutes) remounted
+  the whole workspace. An unsaved new price version, an open dialog or a typed payment was lost.
+- Price list pager: the range ("1-20 / 40") was reordered in Hebrew.
+- My calendar and installers commits of sections 2 and 4 added raw pixel font sizes; the type-scale ratchet failed.
+
+### Done
+- Backend: a fact is refused when the recorded total plus the new quantity is above the plan (`ADDON_OVER_PLAN`,
+  planned and done in the error). A replay of the same event is answered before the check. The project row lock
+  serializes concurrent facts.
+- Mobile: the same check against what the phone holds, with RU / HE text; the server stays the authority.
+- Backend: a stage whose phone time is before its assignment, or under another price version than the one at
+  receipt, keeps its fact and gets status `TIME_REVIEW` with nothing accrued. Office-recorded stages are taken as given.
+- Backend + admin: "Confirm the time" on the door stages card (OWNER / OPERATIONS with the price authority, reason
+  required). It values the stage at the rate in effect at its recorded time, once, audited `DOOR_STAGE_TIME_CONFIRMED`.
+  With no rate of that time it refuses and accrues nothing.
+- Admin: the three financial pages drop their open work only when the signed-in person changes (sign-out, a failed
+  refresh, another account), not on a routine refresh. Pager range kept left to right. Pixel sizes replaced by the
+  type-scale tokens.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Extra work above plan refused on direct and sync paths; rest of plan still recordable; replay not counted twice | confirmed by tests | `test_addons_api.py::test_addon_quantity_is_bounded_by_the_office_plan`; add-on, sync, payroll, e2e, offline suites: 216 passed |
+| Phone refuses above plan, allows exactly the rest | confirmed by tests | mobile `service.test.ts` (75 sync tests) |
+| Stage before assignment / under an older version: fact kept, `TIME_REVIEW`, no earning; confirm values at the old version's rate once; no rate of that time refused | confirmed by tests | `test_stage_earnings.py::test_stage_time_the_server_cannot_vouch_for_is_not_valued`; stage, work-stage, offline authority suites |
+| Routine refresh keeps the editor; another account drops it | confirmed by tests | `auth-session.test.ts`, `PriceListsPage`, `FactoryAccountingPage`, `DimaxAiPage` tests (71) |
+| Confirm-time control and its absence for viewers | confirmed by tests | `WorkStages.test.tsx` (6) |
+| Ratchets, admin and mobile type checks | confirmed by tests | ratchets 2/2; tsc: only the 5 known errors in the other agent's tests; mobile tsc clean |
+| Price list page and editor after the API restart | seen live | demo stack, session kept |
+| Over-plan refusal on demo data | not verified | the demo installer's project has no plan; tests cover both paths |
+| Outbox health architecture tests | not verified | 3 known failures of the test fixture, section 12 |
+
+### Review pass
+- code-review: 7 findings. Fixed: no way to resolve `TIME_REVIEW` (confirm-time added). A plan-floor rule was tried
+  and reverted, because the existing design deliberately allows removing a plan with recorded work ("missing plan"
+  in the summary). The rest are below, for the owner, or in section 15.
+- security-review: no findings. The new endpoint is company-scoped, needs the planner scope plus the live price
+  authority, and takes no price from the request.
+- simplify: clean; the authority check follows the existing two-line pattern.
+
+### For the owner
+- A plan with quantity 0 now allows nothing. Should 0 mean "no limit" instead?
+- Facts waiting in the offline price review are not counted toward the plan, so approving one later can be refused
+  as above plan.
+- A stage confirmed for time but without a rate of that time stays `TIME_REVIEW` (nothing is invented).
+- Installer web cabinet: show what is left of the plan (section 15).
