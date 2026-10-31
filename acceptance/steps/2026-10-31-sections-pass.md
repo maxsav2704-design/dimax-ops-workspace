@@ -759,7 +759,9 @@ replaces the check with the model's list and stops if a project holds an unknown
   longer resends the queue every minute.
 - Load: the release is one UPDATE per successful sync that matches no rows in the normal case.
 
-### For the owner
-- A poison event that makes the server fail (5xx) for its whole batch still holds back the batch. Each cycle is 8
-  attempts over about 4.7 hours, then a release after the next server answer. Splitting a batch on repeated 5xx would
-  isolate it; I left the batch rule unchanged until there is a real case.
+### Decision (owner: "do it the way you think is right")
+- The batch rule for server errors is left as it is, because the server already isolates a bad event. Each event runs
+  in its own savepoint (`sync/application/service.py`). An unexpected failure becomes that event's `SERVER_ERROR` ack,
+  the phone retries that event alone, and the rest of the batch is applied.
+- So a 5xx on the whole request means the server or the network in front of it is down. Splitting the batch then
+  would only multiply requests during an outage.
