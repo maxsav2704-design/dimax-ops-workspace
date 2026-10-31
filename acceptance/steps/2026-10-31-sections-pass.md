@@ -185,3 +185,43 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
 ### For the owner
 - Linking an account still means typing its id; a picker of unlinked installer accounts needs an account list
   endpoint (user management is not built yet, see platform section).
+
+## 5. Journals and site signing
+
+### Found (logic + visuals)
+- A retired (deactivated or deleted) door type or add-on type printed as an identifier / "Additional work" in the
+  snapshot and the signed PDF: names were read from active types only.
+- "Refresh works" rebuilt the table even when the office had locked it.
+- The public signing link listed every open issue of the project, office notes included, not only the doors of
+  that document and the site's own defects.
+- Admin: opening for signing, sending to the client and deleting a shared template ran on one click; a failure of
+  the settings requests (integrations, templates) hid the whole journal list; "Retry" was offered on delivered
+  messages; the send notice showed an internal "Object key"; projects beyond the first 200 read "Unknown project";
+  raw statuses; seen live: "Стол заблокирован" (table → "стол") and "Not set" in Russian.
+
+### Done
+- Backend: `door_types.names_by_id` and `addon_types.all_by_id` (all types, retired included) used by every
+  journal snapshot / PDF path; refresh refused while the table is locked (409); the public issue list shows the
+  document's doors and site-raised issues only.
+- Admin: confirmations for open-for-signing, send and template delete; settings failures no longer block the list;
+  retry only for failed deliveries; no internal key in the notice; all projects; readable journal and delivery
+  statuses ("Ждёт подписи", "Подписан", "Не отправлялось"); translation fixes.
+- Kept as is (tried and reverted): requiring the snapshot version at signing would break signing clients that
+  do not send it, and skipping it harms only the signer; the check stays when the version is sent.
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| Retired door type keeps its name; locked table not rebuilt | confirmed by tests | `test_journal_api.py` (new test); journal, delivery, partial acceptance, fix flow, PDF/snapshot contracts, claims, add-ons: 114 passed |
+| Confirmations for send / delete template; list loads with failing settings; statuses readable | confirmed by tests | `JournalPage.test.tsx` (14), `JournalFormPage.test.tsx` |
+| Statuses and translations on the journal page | seen live | demo stack |
+
+### Review pass
+- code-review (self): the required snapshot version broke existing signing tests — reverted with the reason above.
+- security-review: the public link no longer exposes office issue notes of other doors.
+- simplify: one names lookup per type kind instead of six inline dictionaries.
+
+### For the owner
+- Without the partial-acceptance flag a new journal lists every installed door again, including doors signed in an
+  earlier journal (cumulative acts). Keep cumulative acts, or switch the flag on (each act lists only new work)?
+  The claims side is protected separately in section 8.
