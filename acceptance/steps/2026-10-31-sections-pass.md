@@ -315,3 +315,64 @@ signing · 6. Catalogs (door types, reasons, library) · 7. Factory price list �
   as above plan.
 - A stage confirmed for time but without a rate of that time stays `TIME_REVIEW` (nothing is invented).
 - Installer web cabinet: show what is left of the plan (section 15).
+
+## 8. Contracts and billing (claims, agreements, reconciliation, payments)
+
+### Found (logic + visuals)
+- A claim reserved the journal row, not the work. A door listed again by a later signed journal (cumulative acts
+  without partial acceptance) could be presented to the factory twice. The estimate also counted it twice, and it
+  counted rows of journals that a re-signed journal had replaced.
+- A new agreement could start inside work already presented or reserved in a package. The issued packages then
+  disagreed with the agreement in effect for their days.
+- After a package was corrected, the factory's dispute on the old version vanished from the totals until the factory
+  answered again ("false all-clear").
+- A refund was limited only by the payment's unallocated money. Money that still covered open packages, the opening
+  principal or a held retention could be sent back.
+- An ex-VAT payment could be allocated to an opening debt stated with VAT.
+- Every billing refusal showed one generic text ("terms changed or the reference already exists").
+
+### Done
+- Backend (migration 0098): each claim line carries the work it presents (`DOOR:<door>`, `ADDON:<fact>`,
+  `STAGE:<fact>`). The database allows one active line per work, and the period view keeps one line per work. The
+  migration backfills existing lines and stops if a duplicate is already active.
+- Backend: the estimate counts each piece of work once and skips replaced journals. The early-work list also lists
+  each piece once.
+- Backend: an agreement whose start date is on or before the latest presented or reserved work day of the contract is
+  refused (`PRESENTED_WORK`, with the date).
+- Backend + admin: a corrected version not yet answered carries the dispute of the version it replaced
+  (`carried_dispute_ex_vat`). It is shown on the package and in the contract summary until the factory answers.
+- Backend: a refund is limited to the overpayment at proposal and again at approval (`EXCEEDS_OVERPAYMENT`). The
+  overpayment now subtracts everything still owed, a held retention included.
+- Backend: allocating to an opening debt not stated ex-VAT is refused (`NEEDS_VAT_RULE`).
+- Admin: billing dialogs and the claims panel name the actual refusal reason (RU / EN / HE).
+
+### Checks
+| Check | Mark | Evidence |
+|---|---|---|
+| A door in two signed journals: one claim line, one estimate line; a third act repeats it and stays claimed; the database refuses a second active line | confirmed by tests | `test_factory_claims.py::test_a_door_listed_by_two_signed_journals_is_presented_and_estimated_once` |
+| Agreement inside presented work refused with the date; the next day allowed | confirmed by tests | `test_factory_claims.py::test_a_new_agreement_cannot_start_inside_work_already_presented` |
+| Dispute carried to the corrected version and the summary until the factory answers | confirmed by tests | `test_factory_reconciliation.py::test_a_dispute_stays_in_view_until_the_factory_answers_the_correction` |
+| Refund refused when the money still covers what is owed (held retention included); one approval reserves the whole overpayment | confirmed by tests | `test_factory_payments.py` (2 new tests) |
+| Opening debt with VAT refused for ex-VAT money | confirmed by tests | `test_opening_balances.py` |
+| All billing suites (commercial drafts, terms, approvals, activation, claims, reconciliation, payments, opening) | confirmed by tests | 119 passed, then payments 5 passed after the last change |
+| Refusal reasons and carried dispute in the interface | confirmed by tests | `ContractPayments`, `ClaimReconciliation` and the other billing UI tests (36); lint, ratchets, tsc clean |
+| Migration 0098 on the demo database; billing page loads | seen live | demo DB at `0098_claim_work_key`, column and index present; `/factory-accounting` renders (no contracts on demo) |
+| Claim → answer → correction → payment → refund clicked through in the browser | not verified | billing flags are off on demo; the disposable stack needs a production build this host cannot run next to Docker today |
+
+### Review pass
+- code-review: 7 findings. Fixed: held retention counted as refundable; the agreement message now says "presented
+  or reserved". Skipped, listed for the owner: reinstalled door, migration stop on existing duplicates, mixed VAT in
+  opening figures. Skipped as minor: per-claim dispute lookup, the estimate's own copy of the row rule (an import
+  cycle prevents reuse).
+- security-review (inline): no findings. The new checks are company- and contract-scoped, and the new reason fields
+  show only the contract's own figures.
+- simplify: clean.
+
+### For the owner
+- A door reinstalled after a reversal is the same door and is not presented again. Should a reinstall be billable?
+- If production data already holds the same door in two active packages, migration 0098 stops. Cancel or correct one
+  package first.
+- Opening figures add VAT-inclusive and ex-VAT rows into one principal. Keep them apart until the accountant gives
+  the VAT rule?
+- Stage lines of a "full installation" contract are never presented (owner decision of 2026-10-23, still waiting for
+  the stage-rate decision).
